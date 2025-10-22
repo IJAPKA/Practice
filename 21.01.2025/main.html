@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Интерактивная схема — Техническое задание</title>
+  <style>
+    :root{
+      --bg:#07140a;
+      --panel:#072912;
+      --accent:#0bb26b;
+      --accent-2:#0fa56a;
+      --text:#e6fff3;
+      --muted:#9be6c7;
+      --shadow: 0 6px 18px rgba(6,64,37,0.6);
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#032215);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+    .wrap{padding:18px;display:grid;grid-template-columns:320px 1fr;gap:16px;height:100vh;box-sizing:border-box}
+    .sidebar{background:linear-gradient(180deg,var(--panel),#04281a);border-radius:12px;padding:14px;box-shadow:var(--shadow);overflow:auto}
+    .main{position:relative;overflow:auto;border-radius:12px;padding:14px;background:linear-gradient(180deg,#042a18,#02170f);box-shadow:var(--shadow)}
+    h1{font-size:18px;margin:4px 0 10px}
+    .btn{display:inline-block;background:transparent;border:1px solid rgba(11,178,107,0.18);color:var(--accent);padding:6px 10px;border-radius:8px;cursor:pointer;margin-right:6px}
+    .legend{font-size:13px;color:var(--muted);margin-top:8px}
+
+    /* canvas area */
+    .canvas{position:relative;height:calc(100vh - 80px);background:rgba(0,0,0,0.04);border-radius:10px;overflow:auto}
+    .board{position:relative;width:2200px;height:1400px}
+
+    /* node style */
+    .node{position:absolute;min-width:160px;padding:10px 12px;border-radius:10px;background:linear-gradient(180deg,rgba(11,178,107,0.12),rgba(11,178,107,0.06));border:1px solid rgba(11,178,107,0.18);box-shadow:0 8px 20px rgba(3,18,12,0.6);cursor:grab;user-select:none}
+    .node:active{cursor:grabbing}
+    .node .title{font-weight:700;color:var(--accent);margin-bottom:6px}
+    .node .text{font-size:13px;color:var(--muted)}
+    .small{min-width:120px;padding:8px}
+
+    svg.connectors{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+    .link{stroke:rgba(11,178,107,0.9);stroke-width:2;fill:none}
+    .link.marker{stroke-width:2}
+
+    /* simple table for hardware */
+    table.hw{border-collapse:collapse;width:380px;background:transparent;margin-top:8px}
+    table.hw td,table.hw th{border:1px solid rgba(11,178,107,0.08);padding:8px;font-size:13px}
+    table.hw th{background:rgba(11,178,107,0.04);text-align:left}
+
+    /* gantt */
+    .gantt{width:700px;height:140px;background:linear-gradient(180deg,rgba(11,178,107,0.02),transparent);border-radius:8px;padding:10px}
+    .gantt .row{display:flex;align-items:center;margin-bottom:6px}
+    .gantt .label{width:120px;font-size:13px;color:var(--muted)}
+    .gantt .barwrap{flex:1;height:20px;background:rgba(255,255,255,0.02);border-radius:8px;position:relative}
+    .gantt .bar{position:absolute;top:3px;height:14px;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent-2));box-shadow:0 4px 10px rgba(10,90,60,0.4)}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .note{font-size:12px;color:var(--muted);margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="sidebar">
+      <h1>ТЗ — Интерактивная схема</h1>
+      <div class="controls">
+        <button class="btn" id="resetBtn">Сброс позиций</button>
+        <button class="btn" id="exportBtn">Экспорт SVG</button>
+        <button class="btn" id="fitBtn">По центру</button>
+      </div>
+      <div class="legend">Инструкции: перетаскивайте блоки — стрелки автоматически обновляются. Цвета зелёные.</div>
+      <div class="note">Примечание: линии связаны с идентификаторами узлов. Для добавления новых узлов откройте код.</div>
+
+      <h3 style="margin-top:14px">Требования к оборудованию и ПО</h3>
+      <table class="hw">
+        <tr><th>Параметр</th><th>Рекомендуемое</th></tr>
+        <tr><td>ОС</td><td>Windows 10/11, Linux (Ubuntu 22.04), macOS 12+</td></tr>
+        <tr><td>Среда разработки</td><td>VS Code / JetBrains Rider / IntelliJ</td></tr>
+        <tr><td>Язык</td><td>Python / C# / JavaScript (указать)</td></tr>
+        <tr><td>База данных</td><td>PostgreSQL / SQLite / MySQL</td></tr>
+      </table>
+
+      <h3 style="margin-top:12px">Гантт — этапы</h3>
+      <div class="gantt" id="ganttBox">
+        <div class="row"><div class="label">Анализ</div><div class="barwrap"><div class="bar" style="left:0%;width:18%"></div></div></div>
+        <div class="row"><div class="label">Проектирование</div><div class="barwrap"><div class="bar" style="left:18%;width:22%"></div></div></div>
+        <div class="row"><div class="label">Разработка</div><div class="barwrap"><div class="bar" style="left:40%;width:34%"></div></div></div>
+        <div class="row"><div class="label">Тестирование</div><div class="barwrap"><div class="bar" style="left:74%;width:14%"></div></div></div>
+        <div class="row"><div class="label">Внедрение</div><div class="barwrap"><div class="bar" style="left:88%;width:10%"></div></div></div>
+      </div>
+
+    </div>
+
+    <div class="main">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h1>Дерево ТЗ — Главная схема</h1>
+        <div style="font-size:13px;color:var(--muted)">Цветовая тема: зелёная · draggable nodes</div>
+      </div>
+
+      <div class="canvas">
+        <div class="board" id="board">
+          <svg class="connectors" id="svgConnect"></svg>
+
+          <!-- Техническое задание -> разделы (Дерево) -->
+          <div class="node" id="node-tz" style="left:980px;top:20px">
+            <div class="title">Техническое задание</div>
+            <div class="text">Главный документ — корень дерева</div>
+          </div>
+
+          <div class="node small" id="node-vvedenie" style="left:620px;top:140px">
+            <div class="title">Введение</div>
+            <div class="text">Цель проекта: обеспечить ... (пример)</div>
+          </div>
+
+          <div class="node small" id="node-nazn" style="left:980px;top:140px">
+            <div class="title">Назначение разработки</div>
+            <div class="text">Задачи: автоматизация, отчётность, ...</div>
+          </div>
+
+          <div class="node small" id="node-treb_prog" style="left:1340px;top:140px">
+            <div class="title">Требования к программе</div>
+            <div class="text">Функциональные и нефункц. требования</div>
+          </div>
+
+          <div class="node small" id="node-treb_ui" style="left:740px;top:300px">
+            <div class="title">Требования к интерфейсу</div>
+            <div class="text">Окна, кнопки, поля</div>
+          </div>
+
+          <div class="node small" id="node-test" style="left:1180px;top:300px">
+            <div class="title">Тестирование и внедрение</div>
+            <div class="text">План тестов и выпуск</div>
+          </div>
+
+          <!-- Функциональные требования (flowchart) -->
+          <div class="node" id="node-func" style="left:120px;top:520px">
+            <div class="title">Функции программы</div>
+            <div class="text">Регистрация, обработка, экспорт</div>
+          </div>
+          <div class="node small" id="node-reg" style="left:40px;top:620px">
+            <div class="title">Регистрация пользователя</div>
+            <div class="text">Ввод данных, проверка</div>
+          </div>
+          <div class="node small" id="node-process" style="left:220px;top:620px">
+            <div class="title">Обработка данных</div>
+            <div class="text">Бизнес-логика, валидация</div>
+          </div>
+          <div class="node small" id="node-export" style="left:120px;top:740px">
+            <div class="title">Экспорт отчётов</div>
+            <div class="text">PDF/CSV/Excel</div>
+          </div>
+
+          <!-- Нефункциональные качества -->
+          <div class="node" id="node-nonfunc" style="left:520px;top:520px">
+            <div class="title">Нефункциональные требования</div>
+            <div class="text">Параметры качества</div>
+          </div>
+          <div class="node small" id="node-perf" style="left:420px;top:620px">
+            <div class="title">Производительность</div>
+            <div class="text">Время отклика, нагрузка</div>
+          </div>
+          <div class="node small" id="node-ux" style="left:560px;top:620px">
+            <div class="title">Удобство интерфейса</div>
+            <div class="text">Доступность, простота</div>
+          </div>
+          <div class="node small" id="node-sec" style="left:700px;top:620px">
+            <div class="title">Безопасность</div>
+            <div class="text">Аутентификация, шифрование</div>
+          </div>
+          <div class="node small" id="node-rel" style="left:840px;top:620px">
+            <div class="title">Надёжность</div>
+            <div class="text">Резервирование, ошибки</div>
+          </div>
+
+          <!-- Интерфейс диаграмма -->
+          <div class="node" id="node-ui" style="left:980px;top:520px">
+            <div class="title">Диаграмма интерфейса</div>
+            <div class="text">Окна, кнопки, поля</div>
+          </div>
+          <div class="node small" id="node-input" style="left:880px;top:640px">
+            <div class="title">Ввод данных</div>
+            <div class="text">Поля, маски</div>
+          </div>
+          <div class="node small" id="node-view" style="left:980px;top:640px">
+            <div class="title">Просмотр</div>
+            <div class="text">Список, таблица</div>
+          </div>
+          <div class="node small" id="node-save" style="left:1080px;top:640px">
+            <div class="title">Сохранить</div>
+            <div class="text">Кнопка сохранения</div>
+          </div>
+
+          <!-- Взаимодействие модулей -->
+          <div class="node" id="node-modules" style="left:1400px;top:520px">
+            <div class="title">Взаимодействие модулей</div>
+            <div class="text">Интерфейс → Логика → БД</div>
+          </div>
+          <div class="node small" id="node-ui2" style="left:1320px;top:640px">
+            <div class="title">Интерфейс</div>
+            <div class="text">Frontend</div>
+          </div>
+          <div class="node small" id="node-logic" style="left:1440px;top:640px">
+            <div class="title">Логика</div>
+            <div class="text">Backend / API</div>
+          </div>
+          <div class="node small" id="node-db" style="left:1560px;top:640px">
+            <div class="title">База данных</div>
+            <div class="text">Postgres / SQL</div>
+          </div>
+
+          <!-- Тестирование -->
+          <div class="node" id="node-testflow" style="left:1600px;top:520px">
+            <div class="title">Тестирование и контроль качества</div>
+            <div class="text">Схема проверки</div>
+          </div>
+          <div class="node small" id="node-devdone" style="left:1540px;top:640px">
+            <div class="title">Разработка завершена</div>
+            <div class="text">Готово к тестам</div>
+          </div>
+          <div class="node small" id="node-modtests" style="left:1680px;top:640px">
+            <div class="title">Тестирование модулей</div>
+            <div class="text">Unit / Integration</div>
+          </div>
+          <div class="node small" id="node-fix" style="left:1800px;top:640px">
+            <div class="title">Исправление ошибок</div>
+            <div class="text">Issue tracking</div>
+          </div>
+          <div class="node small" id="node-finaltest" style="left:1920px;top:640px">
+            <div class="title">Финальное тестирование</div>
+            <div class="text">Regression / Acceptance</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// --- connections (pairs of node ids) ---
+const connections = [
+  ['node-tz','node-vvedenie'],
+  ['node-tz','node-nazn'],
+  ['node-tz','node-treb_prog'],
+  ['node-tz','node-treb_ui'],
+  ['node-tz','node-test'],
+
+  // chain from general to specific
+  ['node-vvedenie','node-nazn'],
+
+  // functional flow
+  ['node-func','node-reg'],['node-func','node-process'],['node-func','node-export'],
+
+  // nonfunctional
+  ['node-nonfunc','node-perf'],['node-nonfunc','node-ux'],['node-nonfunc','node-sec'],['node-nonfunc','node-rel'],
+  ['node-nonfunc','node-treb_prog'],
+
+  // interface
+  ['node-ui','node-input'],['node-ui','node-view'],['node-ui','node-save'],
+
+  // modules
+  ['node-modules','node-ui2'],['node-modules','node-logic'],['node-modules','node-db'],
+  ['node-ui2','node-logic'],['node-logic','node-db'],
+
+  // testing flow
+  ['node-testflow','node-devdone'],['node-devdone','node-modtests'],['node-modtests','node-fix'],['node-fix','node-finaltest'],['node-finaltest','node-test']
+];
+
+const svg = document.getElementById('svgConnect');
+const board = document.getElementById('board');
+
+function createLink(a,b){
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.classList.add('link');
+  path.dataset.a = a; path.dataset.b = b;
+  path.setAttribute('d','');
+  svg.appendChild(path);
+}
+
+// init links
+connections.forEach(c=>createLink(c[0],c[1]));
+
+function posOf(el){
+  const r = el.getBoundingClientRect();
+  const rb = board.getBoundingClientRect();
+  return {x: r.left - rb.left + r.width/2, y: r.top - rb.top + r.height/2};
+}
+
+function updateConnections(){
+  document.querySelectorAll('svg.connectors path.link').forEach(p=>{
+    const a = document.getElementById(p.dataset.a);
+    const b = document.getElementById(p.dataset.b);
+    if(!a || !b) return;
+    const A = posOf(a); const B = posOf(b);
+    // draw simple curved path
+    const dx = Math.abs(B.x - A.x);
+    const dy = Math.abs(B.y - A.y);
+    const cx1 = A.x + (B.x > A.x ? Math.min(200,dx/2) : -Math.min(200,dx/2));
+    const cy1 = A.y;
+    const cx2 = B.x + (B.x > A.x ? -Math.min(200,dx/2) : Math.min(200,dx/2));
+    const cy2 = B.y;
+    const d = `M ${A.x} ${A.y} C ${cx1} ${cy1} ${cx2} ${cy2} ${B.x} ${B.y}`;
+    p.setAttribute('d',d);
+    p.setAttribute('marker-end','url(#arrow)');
+  });
+}
+
+// marker arrow defs
+const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+marker.setAttribute('id','arrow');marker.setAttribute('markerWidth','10');marker.setAttribute('markerHeight','10');marker.setAttribute('refX','8');marker.setAttribute('refY','3');marker.setAttribute('orient','auto');
+const arrowPath = document.createElementNS('http://www.w3.org/2000/svg','path');arrowPath.setAttribute('d','M0,0 L0,6 L9,3 z');arrowPath.setAttribute('fill',getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#0bb26b');
+marker.appendChild(arrowPath);defs.appendChild(marker);svg.appendChild(defs);
+
+// draggable nodes
+let dragging = null; let offset = {x:0,y:0};
+board.querySelectorAll('.node').forEach(nd=>{
+  nd.addEventListener('pointerdown',e=>{
+    nd.setPointerCapture(e.pointerId);
+    dragging = nd;
+    const rect = nd.getBoundingClientRect();
+    const rb = board.getBoundingClientRect();
+    offset.x = e.clientX - rect.left; offset.y = e.clientY - rect.top;
+    nd.style.zIndex = 999;
+  });
+  nd.addEventListener('pointermove',e=>{
+    if(!dragging) return;
+    if(dragging !== nd) return;
+    const rb = board.getBoundingClientRect();
+    let left = e.clientX - rb.left - offset.x;
+    let top = e.clientY - rb.top - offset.y;
+    // clamp inside board
+    left = Math.max(0, Math.min(board.clientWidth - nd.clientWidth, left));
+    top = Math.max(0, Math.min(board.clientHeight - nd.clientHeight, top));
+    nd.style.left = left + 'px'; nd.style.top = top + 'px';
+    updateConnections();
+  });
+  nd.addEventListener('pointerup',e=>{
+    nd.releasePointerCapture(e.pointerId);
+    dragging = null; nd.style.zIndex = '';
+  });
+  nd.addEventListener('pointercancel',e=>{dragging=null;});
+});
+
+// initial update
+window.addEventListener('load',()=>{ updateConnections(); });
+window.addEventListener('resize',()=>{ updateConnections(); });
+
+// toolbar
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  // reload to original positions
+  if(confirm('Сбросить позиции всех узлов?')) location.reload();
+});
+
+// center fit
+document.getElementById('fitBtn').addEventListener('click',()=>{
+  board.parentElement.scrollTo( (board.clientWidth - board.parentElement.clientWidth)/2, 0 );
+});
+
+// export svg
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  // clone svg and serialize
+  updateConnections();
+  const clone = svg.cloneNode(true);
+  const bb = board.getBoundingClientRect();
+  clone.setAttribute('width',board.clientWidth); clone.setAttribute('height',board.clientHeight);
+  const serializer = new XMLSerializer();
+  const str = serializer.serializeToString(clone);
+  const blob = new Blob([str],{type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'tz-diagram.svg'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+// small auto-update loop (in case fonts/layout change)
+setInterval(()=>{ updateConnections(); },400);
+
+</script>
+</body>
+</html>
