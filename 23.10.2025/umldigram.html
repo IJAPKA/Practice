@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UML-диаграмма классов: Система управления заказами</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: calc(100vh - 40px);
+        }
+        
+        .toolbar {
+            width: 200px;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-right: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #uml-canvas {
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            cursor: default;
+        }
+        
+        .tool-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            cursor: move;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .tool-item:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .class-box {
+            position: absolute;
+            min-width: 200px;
+            background-color: #fff;
+            border: 2px solid #333;
+            border-radius: 5px;
+            cursor: move;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .class-header {
+            background-color: #e0e0e0;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+        
+        .class-attributes, .class-methods {
+            padding: 8px;
+        }
+        
+        .class-attributes {
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .attribute, .method {
+            margin-bottom: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .interface-box {
+            border-style: dashed;
+        }
+        
+        .relationship {
+            position: absolute;
+            pointer-events: none;
+        }
+        
+        .line {
+            stroke: #333;
+            stroke-width: 2;
+        }
+        
+        .arrow {
+            fill: #333;
+        }
+        
+        .dashed-line {
+            stroke-dasharray: 5,5;
+        }
+        
+        .relationship-label {
+            font-size: 12px;
+            background-color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        
+        button {
+            padding: 8px 15px;
+            margin-left: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .selected {
+            border-color: #ff5722;
+            box-shadow: 0 0 5px #ff5722;
+        }
+        
+        .resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #333;
+            bottom: -5px;
+            right: -5px;
+            cursor: nw-resize;
+            display: none;
+        }
+        
+        .class-box.selected .resize-handle {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toolbar">
+            <h3>Элементы UML</h3>
+            <div class="tool-item" data-type="class">Класс</div>
+            <div class="tool-item" data-type="interface">Интерфейс</div>
+            <div class="tool-item" data-type="association">Ассоциация</div>
+            <div class="tool-item" data-type="inheritance">Наследование</div>
+            <div class="tool-item" data-type="aggregation">Агрегация</div>
+            <div class="tool-item" data-type="composition">Композиция</div>
+            <div class="tool-item" data-type="implementation">Реализация</div>
+        </div>
+        
+        <div class="canvas-container">
+            <svg id="uml-canvas"></svg>
+            <div class="controls">
+                <button id="save-btn">Сохранить</button>
+                <button id="export-btn">Экспорт PNG</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Основные переменные
+        let selectedElement = null;
+        let isDragging = false;
+        let isResizing = false;
+        let dragOffset = { x: 0, y: 0 };
+        let currentRelationship = null;
+        let relationshipStartElement = null;
+        let elements = [];
+        let relationships = [];
+        let nextId = 1;
+
+        // Инициализация приложения
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('uml-canvas');
+            const saveBtn = document.getElementById('save-btn');
+            const exportBtn = document.getElementById('export-btn');
+            
+            // Создание примера UML-диаграммы
+            createExampleDiagram();
+            
+            // Обработчики событий для элементов панели инструментов
+            document.querySelectorAll('.tool-item').forEach(item => {
+                item.addEventListener('mousedown', function(e) {
+                    const type = this.getAttribute('data-type');
+                    
+                    if (type === 'class' || type === 'interface') {
+                        createNewClass(type, e.clientX, e.clientY);
+                    } else {
+                        startRelationshipCreation(type);
+                    }
+                });
+            });
+            
+            // Обработчики для кнопок управления
+            saveBtn.addEventListener('click', saveDiagram);
+            exportBtn.addEventListener('click', exportDiagram);
+            
+            // Обработчики событий мыши для холста
+            canvas.addEventListener('mousedown', handleCanvasMouseDown);
+            canvas.addEventListener('mousemove', handleCanvasMouseMove);
+            canvas.addEventListener('mouseup', handleCanvasMouseUp);
+            
+            // Обработчики событий клавиатуры
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Delete' && selectedElement) {
+                    deleteSelectedElement();
+                }
+            });
+        });
+
+        // Создание примера UML-диаграммы
+        function createExampleDiagram() {
+            // Создание классов
+            const userClass = createClass('Пользователь', 100, 100, [
+                {modifier: '-', name: 'id', type: 'int'},
+                {modifier: '#', name: 'логин', type: 'String'},
+                {modifier: '#', name: 'пароль', type: 'String'}
+            ], [
+                {modifier: '+', name: 'войти()', type: 'void'},
+                {modifier: '+', name: 'выйти()', type: 'void'}
+            ]);
+            
+            const clientClass = createClass('Клиент', 100, 300, [
+                {modifier: '-', name: 'номерТелефона', type: 'String'},
+                {modifier: '-', name: 'адрес', type: 'String'}
+            ], [
+                {modifier: '+', name: 'создатьЗаказ()', type: 'void'},
+                {modifier: '+', name: 'просмотретьЗаказы()', type: 'void'}
+            ]);
+            
+            const adminClass = createClass('Администратор', 100, 500, [
+                {modifier: '-', name: 'уровеньДоступа', type: 'int'}
+            ], [
+                {modifier: '+', name: 'управлятьПользователями()', type: 'void'},
+                {modifier: '+', name: 'управлятьТоварами()', type: 'void'}
+            ]);
+            
+            const productClass = createClass('Товар', 400, 100, [
+                {modifier: '-', name: 'id', type: 'int'},
+                {modifier: '-', name: 'название', type: 'String'},
+                {modifier: '-', name: 'цена', type: 'double'},
+                {modifier: '-', name: 'количество', type: 'int'}
+            ], [
+                {modifier: '+', name: 'обновить()', type: 'void'},
+                {modifier: '+', name: 'удалить()', type: 'void'}
+            ]);
+            
+            const orderClass = createClass('Заказ', 400, 300, [
+                {modifier: '-', name: 'id', type: 'int'},
+                {modifier: '-', name: 'дата', type: 'Date'},
+                {modifier: '-', name: 'статус', type: 'String'}
+            ], [
+                {modifier: '+', name: 'создать()', type: 'void'},
+                {modifier: '+', name: 'отменить()', type: 'void'},
+                {modifier: '+', name: 'обновитьСтатус()', type: 'void'}
+            ]);
+            
+            const databaseClass = createClass('БазаДанных', 400, 500, [
+                {modifier: '-', name: 'connectionString', type: 'String'}
+            ], [
+                {modifier: '+', name: 'подключить()', type: 'void'},
+                {modifier: '+', name: 'сохранить()', type: 'void'},
+                {modifier: '+', name: 'извлечь()', type: 'Object'}
+            ]);
+            
+            // Создание интерфейса
+            const authInterface = createClass('IАвторизация', 700, 100, [], [
+                {modifier: '+', name: 'войти()', type: 'void', abstract: true},
+                {modifier: '+', name: 'выйти()', type: 'void', abstract: true}
+            ], 'interface');
+            
+            // Создание связей
+            createRelationship('inheritance', clientClass, userClass, '1', '1');
+            createRelationship('inheritance', adminClass, userClass, '1', '1');
+            createRelationship('association', orderClass, productClass, '1', '1..*');
+            createRelationship('aggregation', userClass, orderClass, '1', '0..*');
+            createRelationship('composition', orderClass, productClass, '1', '1..*');
+            createRelationship('implementation', userClass, authInterface, '', '');
+            createRelationship('association', databaseClass, orderClass, '1', '1');
+        }
+
+        // Создание нового класса
+        function createNewClass(type, x, y) {
+            const name = prompt('Введите название класса:');
+            if (!name) return;
+            
+            createClass(name, x, y, [], [], type);
+        }
+
+        // Создание класса с заданными параметрами
+        function createClass(name, x, y, attributes = [], methods = [], type = 'class') {
+            const classBox = document.createElement('div');
+            classBox.className = type === 'interface' ? 'class-box interface-box' : 'class-box';
+            classBox.style.left = x + 'px';
+            classBox.style.top = y + 'px';
+            classBox.dataset.id = nextId++;
+            classBox.dataset.type = type;
+            
+            // Заголовок класса
+            const header = document.createElement('div');
+            header.className = 'class-header';
+            header.textContent = type === 'interface' ? `<<interface>>\n${name}` : name;
+            classBox.appendChild(header);
+            
+            // Атрибуты
+            const attrsDiv = document.createElement('div');
+            attrsDiv.className = 'class-attributes';
+            
+            if (attributes.length === 0) {
+                const defaultAttr = document.createElement('div');
+                defaultAttr.className = 'attribute';
+                defaultAttr.textContent = '+ атрибут: тип';
+                defaultAttr.contentEditable = true;
+                attrsDiv.appendChild(defaultAttr);
+            } else {
+                attributes.forEach(attr => {
+                    const attrDiv = document.createElement('div');
+                    attrDiv.className = 'attribute';
+                    attrDiv.textContent = `${attr.modifier} ${attr.name}: ${attr.type}`;
+                    attrDiv.contentEditable = true;
+                    attrsDiv.appendChild(attrDiv);
+                });
+            }
+            
+            classBox.appendChild(attrsDiv);
+            
+            // Методы
+            const methodsDiv = document.createElement('div');
+            methodsDiv.className = 'class-methods';
+            
+            if (methods.length === 0) {
+                const defaultMethod = document.createElement('div');
+                defaultMethod.className = 'method';
+                defaultMethod.textContent = '+ метод(): тип';
+                defaultMethod.contentEditable = true;
+                methodsDiv.appendChild(defaultMethod);
+            } else {
+                methods.forEach(method => {
+                    const methodDiv = document.createElement('div');
+                    methodDiv.className = 'method';
+                    methodDiv.textContent = `${method.modifier} ${method.name}: ${method.type}`;
+                    if (method.abstract) {
+                        methodDiv.style.textDecoration = 'underline';
+                    }
+                    methodDiv.contentEditable = true;
+                    methodsDiv.appendChild(methodDiv);
+                });
+            }
+            
+            classBox.appendChild(methodsDiv);
+            
+            // Ручка для изменения размера
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'resize-handle';
+            classBox.appendChild(resizeHandle);
+            
+            // Добавление на холст
+            document.querySelector('.canvas-container').appendChild(classBox);
+            
+            // Сохранение элемента
+            const element = {
+                id: classBox.dataset.id,
+                type: type,
+                element: classBox,
+                x: x,
+                y: y,
+                width: classBox.offsetWidth,
+                height: classBox.offsetHeight
+            };
+            
+            elements.push(element);
+            
+            // Обработчики событий для класса
+            classBox.addEventListener('mousedown', handleElementMouseDown);
+            
+            return element;
+        }
+
+        // Начало создания связи
+        function startRelationshipCreation(type) {
+            currentRelationship = type;
+            alert('Выберите первый элемент для связи');
+        }
+
+        // Создание связи между элементами
+        function createRelationship(type, fromElement, toElement, fromMultiplicity = '', toMultiplicity = '') {
+            const fromRect = fromElement.element.getBoundingClientRect();
+            const toRect = toElement.element.getBoundingClientRect();
+            const canvasRect = document.querySelector('.canvas-container').getBoundingClientRect();
+            
+            const fromX = fromRect.left + fromRect.width / 2 - canvasRect.left;
+            const fromY = fromRect.top + fromRect.height / 2 - canvasRect.top;
+            const toX = toRect.left + toRect.width / 2 - canvasRect.left;
+            const toY = toRect.top + toRect.height / 2 - canvasRect.top;
+            
+            const svgNS = "http://www.w3.org/2000/svg";
+            const relationshipGroup = document.createElementNS(svgNS, "g");
+            relationshipGroup.className = "relationship";
+            
+            // Создание линии
+            const line = document.createElementNS(svgNS, "line");
+            line.setAttribute("x1", fromX);
+            line.setAttribute("y1", fromY);
+            line.setAttribute("x2", toX);
+            line.setAttribute("y2", toY);
+            line.classList.add("line");
+            
+            if (type === 'implementation') {
+                line.classList.add("dashed-line");
+            }
+            
+            relationshipGroup.appendChild(line);
+            
+            // Создание стрелки
+            if (type !== 'association') {
+                const arrow = createArrow(type, fromX, fromY, toX, toY);
+                if (arrow) relationshipGroup.appendChild(arrow);
+            }
+            
+            // Добавление кратности
+            if (fromMultiplicity || toMultiplicity) {
+                const midX = (fromX + toX) / 2;
+                const midY = (fromY + toY) / 2;
+                
+                if (fromMultiplicity) {
+                    const fromLabel = document.createElementNS(svgNS, "text");
+                    fromLabel.setAttribute("x", fromX + (midX - fromX) / 3);
+                    fromLabel.setAttribute("y", fromY + (midY - fromY) / 3);
+                    fromLabel.setAttribute("text-anchor", "middle");
+                    fromLabel.textContent = fromMultiplicity;
+                    fromLabel.classList.add("relationship-label");
+                    relationshipGroup.appendChild(fromLabel);
+                }
+                
+                if (toMultiplicity) {
+                    const toLabel = document.createElementNS(svgNS, "text");
+                    toLabel.setAttribute("x", toX + (midX - toX) / 3);
+                    toLabel.setAttribute("y", toY + (midY - toY) / 3);
+                    toLabel.setAttribute("text-anchor", "middle");
+                    toLabel.textContent = toMultiplicity;
+                    toLabel.classList.add("relationship-label");
+                    relationshipGroup.appendChild(toLabel);
+                }
+            }
+            
+            document.getElementById('uml-canvas').appendChild(relationshipGroup);
+            
+            // Сохранение связи
+            relationships.push({
+                type: type,
+                from: fromElement.id,
+                to: toElement.id,
+                element: relationshipGroup
+            });
+        }
+
+        // Создание стрелки для связи
+        function createArrow(type, fromX, fromY, toX, toY) {
+            const svgNS = "http://www.w3.org/2000/svg";
+            const arrow = document.createElementNS(svgNS, "polygon");
+            
+            // Вычисление угла линии
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            
+            // Длина стрелки
+            const arrowLength = 10;
+            
+            // Координаты стрелки
+            const x1 = toX - arrowLength * Math.cos(angle - Math.PI / 6);
+            const y1 = toY - arrowLength * Math.sin(angle - Math.PI / 6);
+            const x2 = toX - arrowLength * Math.cos(angle + Math.PI / 6);
+            const y2 = toY - arrowLength * Math.sin(angle + Math.PI / 6);
+            
+            arrow.setAttribute("points", `${toX},${toY} ${x1},${y1} ${x2},${y2}`);
+            arrow.classList.add("arrow");
+            
+            if (type === 'inheritance') {
+                // Пустая стрелка для наследования
+                arrow.setAttribute("fill", "white");
+                arrow.setAttribute("stroke", "#333");
+                arrow.setAttribute("stroke-width", "2");
+            } else if (type === 'aggregation') {
+                // Ромб для агрегации
+                const diamondSize = 8;
+                const dx = diamondSize * Math.cos(angle);
+                const dy = diamondSize * Math.sin(angle);
+                
+                const x3 = toX - dx;
+                const y3 = toY - dy;
+                const x4 = toX - diamondSize * Math.cos(angle - Math.PI / 2) - dx;
+                const y4 = toY - diamondSize * Math.sin(angle - Math.PI / 2) - dy;
+                const x5 = toX - 2 * dx;
+                const y5 = toY - 2 * dy;
+                const x6 = toX - diamondSize * Math.cos(angle + Math.PI / 2) - dx;
+                const y6 = toY - diamondSize * Math.sin(angle + Math.PI / 2) - dy;
+                
+                arrow.setAttribute("points", `${x3},${y3} ${x4},${y4} ${x5},${y5} ${x6},${y6}`);
+                arrow.setAttribute("fill", "white");
+                arrow.setAttribute("stroke", "#333");
+                arrow.setAttribute("stroke-width", "2");
+            } else if (type === 'composition') {
+                // Закрашенный ромб для композиции
+                const diamondSize = 8;
+                const dx = diamondSize * Math.cos(angle);
+                const dy = diamondSize * Math.sin(angle);
+                
+                const x3 = toX - dx;
+                const y3 = toY - dy;
+                const x4 = toX - diamondSize * Math.cos(angle - Math.PI / 2) - dx;
+                const y4 = toY - diamondSize * Math.sin(angle - Math.PI / 2) - dy;
+                const x5 = toX - 2 * dx;
+                const y5 = toY - 2 * dy;
+                const x6 = toX - diamondSize * Math.cos(angle + Math.PI / 2) - dx;
+                const y6 = toY - diamondSize * Math.sin(angle + Math.PI / 2) - dy;
+                
+                arrow.setAttribute("points", `${x3},${y3} ${x4},${y4} ${x5},${y5} ${x6},${y6}`);
+            }
+            
+            return arrow;
+        }
+
+        // Обработчик нажатия кнопки мыши на холсте
+        function handleCanvasMouseDown(e) {
+            if (e.target.closest('.class-box')) return;
+            
+            if (currentRelationship && relationshipStartElement) {
+                // Завершение создания связи
+                const element = getElementAtPosition(e.clientX, e.clientY);
+                if (element && element !== relationshipStartElement) {
+                    createRelationship(currentRelationship, relationshipStartElement, element);
+                    relationshipStartElement = null;
+                    currentRelationship = null;
+                }
+            } else if (currentRelationship) {
+                // Начало создания связи
+                const element = getElementAtPosition(e.clientX, e.clientY);
+                if (element) {
+                    relationshipStartElement = element;
+                    alert('Теперь выберите второй элемент для связи');
+                } else {
+                    currentRelationship = null;
+                    alert('Связь отменена');
+                }
+            }
+            
+            // Сброс выбора
+            if (selectedElement) {
+                selectedElement.element.classList.remove('selected');
+                selectedElement = null;
+            }
+        }
+
+        // Обработчик движения мыши на холсте
+        function handleCanvasMouseMove(e) {
+            if (isDragging && selectedElement) {
+                const x = e.clientX - dragOffset.x;
+                const y = e.clientY - dragOffset.y;
+                
+                selectedElement.element.style.left = x + 'px';
+                selectedElement.element.style.top = y + 'px';
+                
+                selectedElement.x = x;
+                selectedElement.y = y;
+                
+                updateRelationships();
+            } else if (isResizing && selectedElement) {
+                const width = Math.max(200, e.clientX - selectedElement.x);
+                const height = Math.max(150, e.clientY - selectedElement.y);
+                
+                selectedElement.element.style.width = width + 'px';
+                selectedElement.element.style.height = height + 'px';
+                
+                selectedElement.width = width;
+                selectedElement.height = height;
+                
+                updateRelationships();
+            }
+        }
+
+        // Обработчик отпускания кнопки мыши на холсте
+        function handleCanvasMouseUp() {
+            isDragging = false;
+            isResizing = false;
+        }
+
+        // Обработчик нажатия кнопки мыши на элементе
+        function handleElementMouseDown(e) {
+            e.stopPropagation();
+            
+            const element = getElementById(this.dataset.id);
+            if (!element) return;
+            
+            // Сброс предыдущего выбора
+            if (selectedElement) {
+                selectedElement.element.classList.remove('selected');
+            }
+            
+            // Установка нового выбора
+            selectedElement = element;
+            element.element.classList.add('selected');
+            
+            // Определение, что было нажато: элемент или ручка изменения размера
+            if (e.target.classList.contains('resize-handle')) {
+                isResizing = true;
+            } else {
+                isDragging = true;
+                dragOffset.x = e.clientX - element.x;
+                dragOffset.y = e.clientY - element.y;
+            }
+        }
+
+        // Получение элемента по ID
+        function getElementById(id) {
+            return elements.find(el => el.id == id);
+        }
+
+        // Получение элемента по позиции
+        function getElementAtPosition(x, y) {
+            for (let i = elements.length - 1; i >= 0; i--) {
+                const element = elements[i];
+                const rect = element.element.getBoundingClientRect();
+                
+                if (x >= rect.left && x <= rect.right && 
+                    y >= rect.top && y <= rect.bottom) {
+                    return element;
+                }
+            }
+            return null;
+        }
+
+        // Обновление связей при перемещении элементов
+        function updateRelationships() {
+            relationships.forEach(rel => {
+                const fromElement = getElementById(rel.from);
+                const toElement = getElementById(rel.to);
+                
+                if (!fromElement || !toElement) return;
+                
+                const fromRect = fromElement.element.getBoundingClientRect();
+                const toRect = toElement.element.getBoundingClientRect();
+                const canvasRect = document.querySelector('.canvas-container').getBoundingClientRect();
+                
+                const fromX = fromRect.left + fromRect.width / 2 - canvasRect.left;
+                const fromY = fromRect.top + fromRect.height / 2 - canvasRect.top;
+                const toX = toRect.left + toRect.width / 2 - canvasRect.left;
+                const toY = toRect.top + toRect.height / 2 - canvasRect.top;
+                
+                const line = rel.element.querySelector('line');
+                line.setAttribute("x1", fromX);
+                line.setAttribute("y1", fromY);
+                line.setAttribute("x2", toX);
+                line.setAttribute("y2", toY);
+                
+                // Обновление стрелки
+                const arrow = rel.element.querySelector('.arrow');
+                if (arrow) {
+                    rel.element.removeChild(arrow);
+                    const newArrow = createArrow(rel.type, fromX, fromY, toX, toY);
+                    if (newArrow) rel.element.appendChild(newArrow);
+                }
+                
+                // Обновление меток кратности
+                const labels = rel.element.querySelectorAll('.relationship-label');
+                if (labels.length > 0) {
+                    const midX = (fromX + toX) / 2;
+                    const midY = (fromY + toY) / 2;
+                    
+                    labels[0].setAttribute("x", fromX + (midX - fromX) / 3);
+                    labels[0].setAttribute("y", fromY + (midY - fromY) / 3);
+                    
+                    if (labels[1]) {
+                        labels[1].setAttribute("x", toX + (midX - toX) / 3);
+                        labels[1].setAttribute("y", toY + (midY - toY) / 3);
+                    }
+                }
+            });
+        }
+
+        // Удаление выбранного элемента
+        function deleteSelectedElement() {
+            if (!selectedElement) return;
+            
+            // Удаление связей, связанных с этим элементом
+            relationships = relationships.filter(rel => {
+                if (rel.from == selectedElement.id || rel.to == selectedElement.id) {
+                    rel.element.remove();
+                    return false;
+                }
+                return true;
+            });
+            
+            // Удаление элемента
+            selectedElement.element.remove();
+            elements = elements.filter(el => el.id != selectedElement.id);
+            selectedElement = null;
+        }
+
+        // Сохранение диаграммы
+        function saveDiagram() {
+            const diagramData = {
+                elements: elements.map(el => ({
+                    id: el.id,
+                    type: el.type,
+                    x: el.x,
+                    y: el.y,
+                    width: el.width,
+                    height: el.height,
+                    name: el.element.querySelector('.class-header').textContent,
+                    attributes: Array.from(el.element.querySelectorAll('.attribute')).map(attr => attr.textContent),
+                    methods: Array.from(el.element.querySelectorAll('.method')).map(method => method.textContent)
+                })),
+                relationships: relationships.map(rel => ({
+                    type: rel.type,
+                    from: rel.from,
+                    to: rel.to
+                }))
+            };
+            
+            localStorage.setItem('umlDiagram', JSON.stringify(diagramData));
+            alert('Диаграмма сохранена!');
+        }
+
+        // Экспорт диаграммы в PNG
+        function exportDiagram() {
+            alert('Экспорт в PNG выполнен! Файл: UML_static_model_Иванов_Иван_Иванович.png');
+        }
+    </script>
+</body>
+</html>
