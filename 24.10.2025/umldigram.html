@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UML-диаграмма классов: Система управления заказами</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            display: flex;
+            height: 90vh;
+            gap: 10px;
+        }
+        
+        .toolbox {
+            width: 200px;
+            background-color: white;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .toolbox h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .toolbox button {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 8px;
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .toolbox button:hover {
+            background-color: #385d8a;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #uml-canvas {
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            cursor: default;
+        }
+        
+        .uml-class {
+            position: absolute;
+            min-width: 200px;
+            background-color: white;
+            border: 1px solid #333;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: move;
+            user-select: none;
+        }
+        
+        .class-header {
+            background-color: #e6e6e6;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .class-body {
+            padding: 8px;
+        }
+        
+        .class-attributes, .class-methods {
+            margin-bottom: 8px;
+        }
+        
+        .interface {
+            border-style: dashed;
+        }
+        
+        .abstract {
+            font-style: italic;
+        }
+        
+        .static {
+            text-decoration: underline;
+        }
+        
+        .selected {
+            border: 2px solid #4a6fa5;
+            box-shadow: 0 0 5px rgba(74, 111, 165, 0.5);
+        }
+        
+        .connection-point {
+            width: 8px;
+            height: 8px;
+            background-color: #4a6fa5;
+            border-radius: 50%;
+            position: absolute;
+            cursor: crosshair;
+        }
+        
+        .connection-line {
+            stroke: #333;
+            stroke-width: 2;
+            fill: none;
+        }
+        
+        .inheritance-arrow {
+            fill: #333;
+        }
+        
+        .composition-arrow {
+            fill: #333;
+        }
+        
+        .association-line {
+            stroke-dasharray: 5, 5;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 12px;
+        }
+        
+        .diagram-tabs {
+            display: flex;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid #4a6fa5;
+            font-weight: bold;
+        }
+        
+        .diagram-container {
+            display: none;
+            height: calc(100% - 50px);
+        }
+        
+        .diagram-container.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>UML-диаграмма классов: Система управления заказами</h1>
+    
+    <div class="diagram-tabs">
+        <div class="tab active" data-tab="class">Диаграмма классов</div>
+        <div class="tab" data-tab="sequence">Диаграмма последовательности</div>
+        <div class="tab" data-tab="state">Диаграмма состояний</div>
+        <div class="tab" data-tab="usecase">Диаграмма вариантов использования</div>
+        <div class="tab" data-tab="component">Диаграмма компонентов</div>
+        <div class="tab" data-tab="deployment">Диаграмма развёртывания</div>
+    </div>
+    
+    <div class="container">
+        <div class="toolbox">
+            <h3>Элементы</h3>
+            <button id="add-class">Добавить класс</button>
+            <button id="add-interface">Добавить интерфейс</button>
+            <button id="add-package">Добавить пакет</button>
+            <button id="add-note">Добавить примечание</button>
+            
+            <h3>Связи</h3>
+            <button id="add-inheritance">Наследование</button>
+            <button id="add-association">Ассоциация</button>
+            <button id="add-aggregation">Агрегация</button>
+            <button id="add-composition">Композиция</button>
+            <button id="add-implementation">Реализация</button>
+            
+            <h3>Действия</h3>
+            <button id="delete-element">Удалить элемент</button>
+            <button id="clear-canvas">Очистить холст</button>
+            <button id="export-png">Экспорт в PNG</button>
+        </div>
+        
+        <div class="canvas-container">
+            <!-- Диаграмма классов -->
+            <div id="class-diagram" class="diagram-container active">
+                <svg id="uml-canvas"></svg>
+                <div class="legend">
+                    <div><strong>Легенда:</strong></div>
+                    <div>+ public</div>
+                    <div>- private</div>
+                    <div># protected</div>
+                    <div><em>курсив - абстрактный</em></div>
+                    <div><u>подчеркивание - статический</u></div>
+                    <div>--- реализация</div>
+                </div>
+            </div>
+            
+            <!-- Диаграмма последовательности -->
+            <div id="sequence-diagram" class="diagram-container">
+                <svg id="sequence-canvas"></svg>
+            </div>
+            
+            <!-- Диаграмма состояний -->
+            <div id="state-diagram" class="diagram-container">
+                <svg id="state-canvas"></svg>
+            </div>
+            
+            <!-- Диаграмма вариантов использования -->
+            <div id="usecase-diagram" class="diagram-container">
+                <svg id="usecase-canvas"></svg>
+            </div>
+            
+            <!-- Диаграмма компонентов -->
+            <div id="component-diagram" class="diagram-container">
+                <svg id="component-canvas"></svg>
+            </div>
+            
+            <!-- Диаграмма развёртывания -->
+            <div id="deployment-diagram" class="diagram-container">
+                <svg id="deployment-canvas"></svg>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Состояние приложения
+        const state = {
+            elements: [],
+            connections: [],
+            selectedElement: null,
+            currentMode: 'select',
+            tempConnection: null,
+            connectionStart: null,
+            currentDiagram: 'class'
+        };
+
+        // DOM элементы
+        const canvas = document.getElementById('uml-canvas');
+        const tabs = document.querySelectorAll('.tab');
+        const diagramContainers = document.querySelectorAll('.diagram-container');
+        
+        // Инициализация холста
+        function initCanvas() {
+            // Установка размеров SVG
+            updateCanvasSize();
+            
+            // Обработчики событий
+            canvas.addEventListener('mousedown', handleCanvasMouseDown);
+            canvas.addEventListener('mousemove', handleCanvasMouseMove);
+            canvas.addEventListener('mouseup', handleCanvasMouseUp);
+            
+            // Обработчики кнопок
+            document.getElementById('add-class').addEventListener('click', () => {
+                state.currentMode = 'add-class';
+                createUmlClass('НовыйКласс', 100, 100);
+            });
+            
+            document.getElementById('add-interface').addEventListener('click', () => {
+                state.currentMode = 'add-interface';
+                createUmlInterface('IИнтерфейс', 100, 100);
+            });
+            
+            document.getElementById('add-inheritance').addEventListener('click', () => {
+                state.currentMode = 'inheritance';
+            });
+            
+            document.getElementById('add-association').addEventListener('click', () => {
+                state.currentMode = 'association';
+            });
+            
+            document.getElementById('add-aggregation').addEventListener('click', () => {
+                state.currentMode = 'aggregation';
+            });
+            
+            document.getElementById('add-composition').addEventListener('click', () => {
+                state.currentMode = 'composition';
+            });
+            
+            document.getElementById('add-implementation').addEventListener('click', () => {
+                state.currentMode = 'implementation';
+            });
+            
+            document.getElementById('delete-element').addEventListener('click', deleteSelectedElement);
+            document.getElementById('clear-canvas').addEventListener('click', clearCanvas);
+            document.getElementById('export-png').addEventListener('click', exportToPng);
+            
+            // Обработчики вкладок
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    switchDiagram(tabName);
+                });
+            });
+            
+            // Создание примера UML-диаграммы
+            createExampleDiagram();
+            createSequenceDiagram();
+            createStateDiagram();
+            createUseCaseDiagram();
+            createComponentDiagram();
+            createDeploymentDiagram();
+        }
+
+        // Переключение между диаграммами
+        function switchDiagram(diagramName) {
+            // Обновление вкладок
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.getAttribute('data-tab') === diagramName) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Обновление контейнеров
+            diagramContainers.forEach(container => {
+                container.classList.remove('active');
+                if (container.id === `${diagramName}-diagram`) {
+                    container.classList.add('active');
+                }
+            });
+            
+            state.currentDiagram = diagramName;
+        }
+
+        // Обновление размера холста
+        function updateCanvasSize() {
+            const containers = document.querySelectorAll('.diagram-container');
+            containers.forEach(container => {
+                const svg = container.querySelector('svg');
+                if (svg) {
+                    svg.setAttribute('width', container.clientWidth);
+                    svg.setAttribute('height', container.clientHeight);
+                }
+            });
+        }
+
+        // Создание UML класса
+        function createUmlClass(name, x, y) {
+            const classId = 'class-' + Date.now();
+            const classElement = document.createElement('div');
+            classElement.id = classId;
+            classElement.className = 'uml-class';
+            classElement.style.left = x + 'px';
+            classElement.style.top = y + 'px';
+            
+            classElement.innerHTML = `
+                <div class="class-header">${name}</div>
+                <div class="class-body">
+                    <div class="class-attributes">
+                        <div>+ id: int</div>
+                        <div>+ имя: string</div>
+                    </div>
+                    <div class="class-methods">
+                        <div>+ создать()</div>
+                        <div>+ удалить()</div>
+                    </div>
+                </div>
+            `;
+            
+            canvas.parentElement.appendChild(classElement);
+            
+            // Добавление точек соединения
+            addConnectionPoints(classElement);
+            
+            // Добавление в состояние
+            state.elements.push({
+                id: classId,
+                type: 'class',
+                name: name,
+                element: classElement,
+                x: x,
+                y: y
+            });
+            
+            // Обработчики событий для элемента
+            makeElementDraggable(classElement);
+            
+            return classElement;
+        }
+
+        // Создание UML интерфейса
+        function createUmlInterface(name, x, y) {
+            const interfaceId = 'interface-' + Date.now();
+            const interfaceElement = document.createElement('div');
+            interfaceElement.id = interfaceId;
+            interfaceElement.className = 'uml-class interface';
+            interfaceElement.style.left = x + 'px';
+            interfaceElement.style.top = y + 'px';
+            
+            interfaceElement.innerHTML = `
+                <div class="class-header">&lt;&lt;interface&gt;&gt;<br>${name}</div>
+                <div class="class-body">
+                    <div class="class-methods">
+                        <div>+ войти()</div>
+                        <div>+ выйти()</div>
+                    </div>
+                </div>
+            `;
+            
+            canvas.parentElement.appendChild(interfaceElement);
+            
+            // Добавление точек соединения
+            addConnectionPoints(interfaceElement);
+            
+            // Добавление в состояние
+            state.elements.push({
+                id: interfaceId,
+                type: 'interface',
+                name: name,
+                element: interfaceElement,
+                x: x,
+                y: y
+            });
+            
+            // Обработчики событий для элемента
+            makeElementDraggable(interfaceElement);
+            
+            return interfaceElement;
+        }
+
+        // Создание точек соединения для элемента
+        function addConnectionPoints(element) {
+            const rect = element.getBoundingClientRect();
+            const containerRect = canvas.parentElement.getBoundingClientRect();
+            
+            // Точки соединения по сторонам элемента
+            const sides = ['top', 'right', 'bottom', 'left'];
+            
+            sides.forEach(side => {
+                const point = document.createElement('div');
+                point.className = 'connection-point';
+                
+                // Позиционирование точки
+                let left, top;
+                switch(side) {
+                    case 'top':
+                        left = rect.width / 2 - 4;
+                        top = -4;
+                        break;
+                    case 'right':
+                        left = rect.width - 4;
+                        top = rect.height / 2 - 4;
+                        break;
+                    case 'bottom':
+                        left = rect.width / 2 - 4;
+                        top = rect.height - 4;
+                        break;
+                    case 'left':
+                        left = -4;
+                        top = rect.height / 2 - 4;
+                        break;
+                }
+                
+                point.style.left = left + 'px';
+                point.style.top = top + 'px';
+                
+                // Обработчик события для точки соединения
+                point.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    startConnection(element, point, side);
+                });
+                
+                element.appendChild(point);
+            });
+        }
+
+        // Начало создания связи
+        function startConnection(element, point, side) {
+            const rect = element.getBoundingClientRect();
+            const containerRect = canvas.parentElement.getBoundingClientRect();
+            
+            // Вычисление начальной точки
+            let startX, startY;
+            switch(side) {
+                case 'top':
+                    startX = rect.left - containerRect.left + rect.width / 2;
+                    startY = rect.top - containerRect.top;
+                    break;
+                case 'right':
+                    startX = rect.left - containerRect.left + rect.width;
+                    startY = rect.top - containerRect.top + rect.height / 2;
+                    break;
+                case 'bottom':
+                    startX = rect.left - containerRect.left + rect.width / 2;
+                    startY = rect.top - containerRect.top + rect.height;
+                    break;
+                case 'left':
+                    startX = rect.left - containerRect.left;
+                    startY = rect.top - containerRect.top + rect.height / 2;
+                    break;
+            }
+            
+            state.connectionStart = {
+                element: element,
+                point: point,
+                side: side,
+                x: startX,
+                y: startY
+            };
+            
+            // Создание временной линии
+            state.tempConnection = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            state.tempConnection.setAttribute('x1', startX);
+            state.tempConnection.setAttribute('y1', startY);
+            state.tempConnection.setAttribute('x2', startX);
+            state.tempConnection.setAttribute('y2', startY);
+            state.tempConnection.setAttribute('class', 'connection-line');
+            
+            canvas.appendChild(state.tempConnection);
+        }
+
+        // Создание перетаскиваемого элемента
+        function makeElementDraggable(element) {
+            let isDragging = false;
+            let offsetX, offsetY;
+            
+            element.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('connection-point')) {
+                    return;
+                }
+                
+                isDragging = true;
+                offsetX = e.clientX - element.getBoundingClientRect().left;
+                offsetY = e.clientY - element.getBoundingClientRect().top;
+                
+                // Выделение элемента
+                selectElement(element);
+                
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const containerRect = canvas.parentElement.getBoundingClientRect();
+                const x = e.clientX - containerRect.left - offsetX;
+                const y = e.clientY - containerRect.top - offsetY;
+                
+                element.style.left = x + 'px';
+                element.style.top = y + 'px';
+                
+                // Обновление позиции в состоянии
+                const elementData = state.elements.find(el => el.element === element);
+                if (elementData) {
+                    elementData.x = x;
+                    elementData.y = y;
+                }
+                
+                // Обновление связанных линий
+                updateConnections(element);
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        }
+
+        // Выбор элемента
+        function selectElement(element) {
+            // Снятие выделения со всех элементов
+            state.elements.forEach(el => {
+                el.element.classList.remove('selected');
+            });
+            
+            // Выделение выбранного элемента
+            element.classList.add('selected');
+            state.selectedElement = element;
+        }
+
+        // Удаление выбранного элемента
+        function deleteSelectedElement() {
+            if (!state.selectedElement) return;
+            
+            // Удаление из DOM
+            state.selectedElement.remove();
+            
+            // Удаление из состояния
+            state.elements = state.elements.filter(el => el.element !== state.selectedElement);
+            
+            // Удаление связанных соединений
+            state.connections = state.connections.filter(conn => {
+                if (conn.from.element === state.selectedElement || conn.to.element === state.selectedElement) {
+                    // Удаление линии из SVG
+                    if (conn.line && conn.line.parentNode) {
+                        conn.line.parentNode.removeChild(conn.line);
+                    }
+                    return false;
+                }
+                return true;
+            });
+            
+            state.selectedElement = null;
+        }
+
+        // Очистка холста
+        function clearCanvas() {
+            // Удаление всех элементов
+            state.elements.forEach(el => {
+                el.element.remove();
+            });
+            
+            // Удаление всех соединений
+            state.connections.forEach(conn => {
+                if (conn.line && conn.line.parentNode) {
+                    conn.line.parentNode.removeChild(conn.line);
+                }
+            });
+            
+            // Очистка состояния
+            state.elements = [];
+            state.connections = [];
+            state.selectedElement = null;
+        }
+
+        // Экспорт в PNG
+        function exportToPng() {
+            alert('Экспорт в PNG будет реализован в полной версии приложения');
+        }
+
+        // Обновление соединений при перемещении элемента
+        function updateConnections(element) {
+            state.connections.forEach(conn => {
+                if (conn.from.element === element || conn.to.element === element) {
+                    updateConnectionLine(conn);
+                }
+            });
+        }
+
+        // Обновление линии соединения
+        function updateConnectionLine(connection) {
+            const fromRect = connection.from.element.getBoundingClientRect();
+            const toRect = connection.to.element.getBoundingClientRect();
+            const containerRect = canvas.parentElement.getBoundingClientRect();
+            
+            // Вычисление точек соединения
+            const fromPoint = calculateConnectionPoint(fromRect, containerRect, connection.from.side);
+            const toPoint = calculateConnectionPoint(toRect, containerRect, connection.to.side);
+            
+            // Обновление линии
+            connection.line.setAttribute('x1', fromPoint.x);
+            connection.line.setAttribute('y1', fromPoint.y);
+            connection.line.setAttribute('x2', toPoint.x);
+            connection.line.setAttribute('y2', toPoint.y);
+        }
+
+        // Вычисление точки соединения
+        function calculateConnectionPoint(elementRect, containerRect, side) {
+            let x, y;
+            
+            switch(side) {
+                case 'top':
+                    x = elementRect.left - containerRect.left + elementRect.width / 2;
+                    y = elementRect.top - containerRect.top;
+                    break;
+                case 'right':
+                    x = elementRect.left - containerRect.left + elementRect.width;
+                    y = elementRect.top - containerRect.top + elementRect.height / 2;
+                    break;
+                case 'bottom':
+                    x = elementRect.left - containerRect.left + elementRect.width / 2;
+                    y = elementRect.top - containerRect.top + elementRect.height;
+                    break;
+                case 'left':
+                    x = elementRect.left - containerRect.left;
+                    y = elementRect.top - containerRect.top + elementRect.height / 2;
+                    break;
+            }
+            
+            return { x, y };
+        }
+
+        // Обработчики событий холста
+        function handleCanvasMouseDown(e) {
+            // Реализация будет добавлена в полной версии
+        }
+
+        function handleCanvasMouseMove(e) {
+            // Обновление временной линии при создании соединения
+            if (state.tempConnection && state.connectionStart) {
+                const containerRect = canvas.parentElement.getBoundingClientRect();
+                const x = e.clientX - containerRect.left;
+                const y = e.clientY - containerRect.top;
+                
+                state.tempConnection.setAttribute('x2', x);
+                state.tempConnection.setAttribute('y2', y);
+            }
+        }
+
+        function handleCanvasMouseUp(e) {
+            // Завершение создания соединения
+            if (state.tempConnection && state.connectionStart) {
+                // Находим элемент под курсором
+                const elementsUnderCursor = document.elementsFromPoint(e.clientX, e.clientY);
+                const targetElement = elementsUnderCursor.find(el => 
+                    el.classList.contains('uml-class') && 
+                    el !== state.connectionStart.element
+                );
+                
+                if (targetElement) {
+                    // Находим ближайшую точку соединения
+                    const targetPoints = targetElement.querySelectorAll('.connection-point');
+                    let closestPoint = null;
+                    let minDistance = Infinity;
+                    
+                    targetPoints.forEach(point => {
+                        const pointRect = point.getBoundingClientRect();
+                        const containerRect = canvas.parentElement.getBoundingClientRect();
+                        const pointX = pointRect.left - containerRect.left + pointRect.width / 2;
+                        const pointY = pointRect.top - containerRect.top + pointRect.height / 2;
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(e.clientX - containerRect.left - pointX, 2) + 
+                            Math.pow(e.clientY - containerRect.top - pointY, 2)
+                        );
+                        
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestPoint = point;
+                        }
+                    });
+                    
+                    if (closestPoint) {
+                        // Определяем сторону целевого элемента
+                        let targetSide;
+                        const pointRect = closestPoint.getBoundingClientRect();
+                        const elementRect = targetElement.getBoundingClientRect();
+                        
+                        if (Math.abs(pointRect.top - elementRect.top) < 5) targetSide = 'top';
+                        else if (Math.abs(pointRect.bottom - elementRect.bottom) < 5) targetSide = 'bottom';
+                        else if (Math.abs(pointRect.left - elementRect.left) < 5) targetSide = 'left';
+                        else if (Math.abs(pointRect.right - elementRect.right) < 5) targetSide = 'right';
+                        
+                        // Создаем постоянное соединение
+                        createConnection(
+                            state.connectionStart.element,
+                            state.connectionStart.side,
+                            targetElement,
+                            targetSide,
+                            state.currentMode
+                        );
+                    }
+                }
+                
+                // Удаляем временную линию
+                canvas.removeChild(state.tempConnection);
+                state.tempConnection = null;
+                state.connectionStart = null;
+            }
+        }
+
+        // Создание соединения между элементами
+        function createConnection(fromElement, fromSide, toElement, toSide, type) {
+            const fromRect = fromElement.getBoundingClientRect();
+            const toRect = toElement.getBoundingClientRect();
+            const containerRect = canvas.parentElement.getBoundingClientRect();
+            
+            // Вычисление точек соединения
+            const fromPoint = calculateConnectionPoint(fromRect, containerRect, fromSide);
+            const toPoint = calculateConnectionPoint(toRect, containerRect, toSide);
+            
+            // Создание линии
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', fromPoint.x);
+            line.setAttribute('y1', fromPoint.y);
+            line.setAttribute('x2', toPoint.x);
+            line.setAttribute('y2', toPoint.y);
+            
+            // Настройка стиля линии в зависимости от типа связи
+            let lineClass = 'connection-line';
+            switch(type) {
+                case 'inheritance':
+                    // Добавление стрелки наследования
+                    addInheritanceArrow(line, toPoint.x, toPoint.y, toSide);
+                    break;
+                case 'association':
+                    lineClass += ' association-line';
+                    break;
+                case 'aggregation':
+                    // Добавление ромба агрегации
+                    addAggregationDiamond(line, fromPoint.x, fromPoint.y, fromSide);
+                    break;
+                case 'composition':
+                    // Добавление закрашенного ромба композиции
+                    addCompositionDiamond(line, fromPoint.x, fromPoint.y, fromSide);
+                    break;
+                case 'implementation':
+                    lineClass += ' association-line';
+                    break;
+            }
+            
+            line.setAttribute('class', lineClass);
+            canvas.appendChild(line);
+            
+            // Добавление в состояние
+            state.connections.push({
+                from: {
+                    element: fromElement,
+                    side: fromSide
+                },
+                to: {
+                    element: toElement,
+                    side: toSide
+                },
+                type: type,
+                line: line
+            });
+        }
+
+        // Добавление стрелки наследования
+        function addInheritanceArrow(line, x, y, side) {
+            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            
+            // Настройка положения стрелки в зависимости от стороны
+            let points;
+            switch(side) {
+                case 'top':
+                    points = `${x},${y} ${x-7},${y+10} ${x+7},${y+10}`;
+                    break;
+                case 'right':
+                    points = `${x},${y} ${x-10},${y-7} ${x-10},${y+7}`;
+                    break;
+                case 'bottom':
+                    points = `${x},${y} ${x-7},${y-10} ${x+7},${y-10}`;
+                    break;
+                case 'left':
+                    points = `${x},${y} ${x+10},${y-7} ${x+10},${y+7}`;
+                    break;
+            }
+            
+            arrow.setAttribute('points', points);
+            arrow.setAttribute('class', 'inheritance-arrow');
+            canvas.appendChild(arrow);
+        }
+
+        // Добавление ромба агрегации
+        function addAggregationDiamond(line, x, y, side) {
+            const diamond = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            
+            // Настройка положения ромба в зависимости от стороны
+            let points;
+            switch(side) {
+                case 'top':
+                    points = `${x},${y} ${x-7},${y-10} ${x},${y-20} ${x+7},${y-10}`;
+                    break;
+                case 'right':
+                    points = `${x},${y} ${x+10},${y-7} ${x+20},${y} ${x+10},${y+7}`;
+                    break;
+                case 'bottom':
+                    points = `${x},${y} ${x-7},${y+10} ${x},${y+20} ${x+7},${y+10}`;
+                    break;
+                case 'left':
+                    points = `${x},${y} ${x-10},${y-7} ${x-20},${y} ${x-10},${y+7}`;
+                    break;
+            }
+            
+            diamond.setAttribute('points', points);
+            diamond.setAttribute('class', 'connection-line');
+            diamond.setAttribute('fill', 'white');
+            canvas.appendChild(diamond);
+        }
+
+        // Добавление ромба композиции
+        function addCompositionDiamond(line, x, y, side) {
+            const diamond = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            
+            // Настройка положения ромба в зависимости от стороны
+            let points;
+            switch(side) {
+                case 'top':
+                    points = `${x},${y} ${x-7},${y-10} ${x},${y-20} ${x+7},${y-10}`;
+                    break;
+                case 'right':
+                    points = `${x},${y} ${x+10},${y-7} ${x+20},${y} ${x+10},${y+7}`;
+                    break;
+                case 'bottom':
+                    points = `${x},${y} ${x-7},${y+10} ${x},${y+20} ${x+7},${y+10}`;
+                    break;
+                case 'left':
+                    points = `${x},${y} ${x-10},${y-7} ${x-20},${y} ${x-10},${y+7}`;
+                    break;
+            }
+            
+            diamond.setAttribute('points', points);
+            diamond.setAttribute('class', 'composition-arrow');
+            canvas.appendChild(diamond);
+        }
+
+        // Создание примера UML-диаграммы классов
+        function createExampleDiagram() {
+            // Создание классов согласно заданиям
+            const userClass = createUmlClass('Пользователь', 50, 50);
+            const clientClass = createUmlClass('Клиент', 50, 200);
+            const adminClass = createUmlClass('Администратор', 50, 350);
+            const productClass = createUmlClass('Товар', 300, 50);
+            const orderClass = createUmlClass('Заказ', 300, 200);
+            const entityClass = createUmlClass('Сущность', 550, 50);
+            const databaseClass = createUmlClass('БазаДанных', 550, 200);
+            const notificationService = createUmlClass('СервисУведомлений', 550, 350);
+            const authInterface = createUmlInterface('IАвторизация', 800, 50);
+            
+            // Настройка специальных классов
+            entityClass.querySelector('.class-header').classList.add('abstract');
+            entityClass.querySelector('.class-methods').innerHTML = `
+                <div class="abstract">+ создать()</div>
+                <div class="abstract">+ удалить()</div>
+            `;
+            
+            // Обновление класса БазаДанных со статическими методами
+            databaseClass.querySelector('.class-body').innerHTML = `
+                <div class="class-attributes">
+                    <div class="static">+ экземпляр: БазаДанных</div>
+                    <div>+ подключение: Connection</div>
+                </div>
+                <div class="class-methods">
+                    <div class="static">+ получитьЭкземпляр(): БазаДанных</div>
+                    <div>+ подключить()</div>
+                    <div>+ сохранить()</div>
+                    <div>+ извлечь()</div>
+                </div>
+            `;
+            
+            // Обновление класса Пользователь с конструктором
+            userClass.querySelector('.class-body').innerHTML = `
+                <div class="class-attributes">
+                    <div>+ id: int</div>
+                    <div>+ имя: string</div>
+                    <div>+ email: string</div>
+                </div>
+                <div class="class-methods">
+                    <div>+ Пользователь(имя: string, email: string)</div>
+                    <div>+ ~Пользователь()</div>
+                    <div>+ создать()</div>
+                    <div>+ удалить()</div>
+                </div>
+            `;
+            
+            // Обновление класса СервисУведомлений
+            notificationService.querySelector('.class-body').innerHTML = `
+                <div class="class-attributes">
+                    <div>+ apiKey: string</div>
+                </div>
+                <div class="class-methods">
+                    <div>+ отправитьEmail()</div>
+                    <div>+ отправитьSMS()</div>
+                </div>
+            `;
+            
+            // Создание связей
+            createConnection(clientClass, 'top', userClass, 'bottom', 'inheritance');
+            createConnection(adminClass, 'top', userClass, 'bottom', 'inheritance');
+            createConnection(userClass, 'right', orderClass, 'left', 'association');
+            createConnection(orderClass, 'right', productClass, 'left', 'composition');
+            createConnection(userClass, 'right', authInterface, 'left', 'implementation');
+            createConnection(databaseClass, 'left', orderClass, 'right', 'association');
+            createConnection(userClass, 'right', entityClass, 'left', 'inheritance');
+            createConnection(productClass, 'right', entityClass, 'left', 'inheritance');
+            createConnection(orderClass, 'right', entityClass, 'left', 'inheritance');
+            createConnection(orderClass, 'bottom', notificationService, 'top', 'association');
+        }
+
+        // Создание диаграммы последовательности
+        function createSequenceDiagram() {
+            const sequenceCanvas = document.getElementById('sequence-canvas');
+            updateCanvasSize();
+            
+            // Создание объектов
+            const objects = [
+                { name: 'Пользователь', x: 100, y: 50 },
+                { name: 'Заказ', x: 300, y: 50 },
+                { name: 'БазаДанных', x: 500, y: 50 },
+                { name: 'СервисУведомлений', x: 700, y: 50 }
+            ];
+            
+            // Отрисовка объектов
+            objects.forEach(obj => {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', obj.x);
+                rect.setAttribute('y', obj.y);
+                rect.setAttribute('width', 150);
+                rect.setAttribute('height', 40);
+                rect.setAttribute('fill', 'white');
+                rect.setAttribute('stroke', 'black');
+                sequenceCanvas.appendChild(rect);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', obj.x + 75);
+                text.setAttribute('y', obj.y + 25);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.textContent = obj.name;
+                sequenceCanvas.appendChild(text);
+                
+                // Линия жизни
+                const lifeLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                lifeLine.setAttribute('x1', obj.x + 75);
+                lifeLine.setAttribute('y1', obj.y + 40);
+                lifeLine.setAttribute('x2', obj.x + 75);
+                lifeLine.setAttribute('y2', 600);
+                lifeLine.setAttribute('stroke', 'black');
+                lifeLine.setAttribute('stroke-dasharray', '5,5');
+                sequenceCanvas.appendChild(lifeLine);
+            });
+            
+            // Сообщения между объектами
+            const messages = [
+                { from: 0, to: 1, text: 'создатьЗаказ()', y: 120 },
+                { from: 1, to: 2, text: 'сохранить()', y: 180 },
+                { from: 2, to: 1, text: 'успех', y: 240 },
+                { from: 1, to: 3, text: 'отправитьУведомление()', y: 300 },
+                { from: 3, to: 0, text: 'уведомление', y: 360 }
+            ];
+            
+            messages.forEach(msg => {
+                const fromX = objects[msg.from].x + 75;
+                const toX = objects[msg.to].x + 75;
+                const y = msg.y;
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', fromX);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', toX);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', 'black');
+                sequenceCanvas.appendChild(line);
+                
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                arrow.setAttribute('points', `${toX},${y} ${toX-7},${y-5} ${toX-7},${y+5}`);
+                arrow.setAttribute('fill', 'black');
+                sequenceCanvas.appendChild(arrow);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', (fromX + toX) / 2);
+                text.setAttribute('y', y - 10);
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = msg.text;
+                sequenceCanvas.appendChild(text);
+            });
+        }
+
+        // Создание диаграммы состояний
+        function createStateDiagram() {
+            const stateCanvas = document.getElementById('state-canvas');
+            updateCanvasSize();
+            
+            const states = [
+                { name: 'Создан', x: 100, y: 100 },
+                { name: 'Оплачен', x: 300, y: 100 },
+                { name: 'Отправлен', x: 500, y: 100 },
+                { name: 'Завершен', x: 700, y: 100 }
+            ];
+            
+            // Отрисовка состояний
+            states.forEach(state => {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', state.x);
+                rect.setAttribute('y', state.y);
+                rect.setAttribute('width', 100);
+                rect.setAttribute('height', 60);
+                rect.setAttribute('fill', 'white');
+                rect.setAttribute('stroke', 'black');
+                rect.setAttribute('rx', '10');
+                stateCanvas.appendChild(rect);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', state.x + 50);
+                text.setAttribute('y', state.y + 30);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.textContent = state.name;
+                stateCanvas.appendChild(text);
+            });
+            
+            // Переходы между состояниями
+            const transitions = [
+                { from: 0, to: 1, event: 'оплатить()' },
+                { from: 1, to: 2, event: 'доставить()' },
+                { from: 2, to: 3, event: 'завершить()' }
+            ];
+            
+            transitions.forEach(trans => {
+                const fromState = states[trans.from];
+                const toState = states[trans.to];
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', fromState.x + 100);
+                line.setAttribute('y1', fromState.y + 30);
+                line.setAttribute('x2', toState.x);
+                line.setAttribute('y2', toState.y + 30);
+                line.setAttribute('stroke', 'black');
+                stateCanvas.appendChild(line);
+                
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                arrow.setAttribute('points', `${toState.x},${toState.y + 30} ${toState.x-10},${toState.y + 25} ${toState.x-10},${toState.y + 35}`);
+                arrow.setAttribute('fill', 'black');
+                stateCanvas.appendChild(arrow);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', (fromState.x + toState.x + 100) / 2);
+                text.setAttribute('y', fromState.y + 20);
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = trans.event;
+                stateCanvas.appendChild(text);
+            });
+        }
+
+        // Создание диаграммы вариантов использования
+        function createUseCaseDiagram() {
+            const usecaseCanvas = document.getElementById('usecase-canvas');
+            updateCanvasSize();
+            
+            // Акторы
+            const actors = [
+                { name: 'Пользователь', x: 50, y: 200 },
+                { name: 'Администратор', x: 850, y: 200 }
+            ];
+            
+            actors.forEach(actor => {
+                // Фигура актора
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', actor.x);
+                circle.setAttribute('cy', actor.y - 30);
+                circle.setAttribute('r', 15);
+                circle.setAttribute('fill', 'white');
+                circle.setAttribute('stroke', 'black');
+                usecaseCanvas.appendChild(circle);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', actor.x);
+                text.setAttribute('y', actor.y + 10);
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = actor.name;
+                usecaseCanvas.appendChild(text);
+            });
+            
+            // Варианты использования
+            const useCases = [
+                { name: 'Авторизоваться', x: 200, y: 100 },
+                { name: 'Создать заказ', x: 200, y: 200 },
+                { name: 'Просмотреть заказ', x: 200, y: 300 },
+                { name: 'Удалить заказ', x: 700, y: 200 }
+            ];
+            
+            useCases.forEach(uc => {
+                const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                ellipse.setAttribute('cx', uc.x);
+                ellipse.setAttribute('cy', uc.y);
+                ellipse.setAttribute('rx', 80);
+                ellipse.setAttribute('ry', 40);
+                ellipse.setAttribute('fill', 'white');
+                ellipse.setAttribute('stroke', 'black');
+                usecaseCanvas.appendChild(ellipse);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', uc.x);
+                text.setAttribute('y', uc.y);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.textContent = uc.name;
+                usecaseCanvas.appendChild(text);
+            });
+            
+            // Связи акторов с вариантами использования
+            const connections = [
+                { actor: 0, useCase: 0 },
+                { actor: 0, useCase: 1 },
+                { actor: 0, useCase: 2 },
+                { actor: 1, useCase: 0 },
+                { actor: 1, useCase: 3 }
+            ];
+            
+            connections.forEach(conn => {
+                const actor = actors[conn.actor];
+                const useCase = useCases[conn.useCase];
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', actor.x);
+                line.setAttribute('y1', actor.y - 15);
+                line.setAttribute('x2', useCase.x - 80);
+                line.setAttribute('y2', useCase.y);
+                line.setAttribute('stroke', 'black');
+                usecaseCanvas.appendChild(line);
+            });
+        }
+
+        // Создание диаграммы компонентов
+        function createComponentDiagram() {
+            const componentCanvas = document.getElementById('component-canvas');
+            updateCanvasSize();
+            
+            const components = [
+                { name: 'Модуль\nАвторизации', x: 100, y: 100 },
+                { name: 'Модуль\nЗаказов', x: 300, y: 100 },
+                { name: 'Модуль\nБазы данных', x: 500, y: 100 },
+                { name: 'Модуль\nУведомлений', x: 700, y: 100 }
+            ];
+            
+            components.forEach(comp => {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', comp.x);
+                rect.setAttribute('y', comp.y);
+                rect.setAttribute('width', 150);
+                rect.setAttribute('height', 80);
+                rect.setAttribute('fill', 'white');
+                rect.setAttribute('stroke', 'black');
+                componentCanvas.appendChild(rect);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', comp.x + 75);
+                text.setAttribute('y', comp.y + 40);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.innerHTML = comp.name.replace('\n', '&#10;');
+                componentCanvas.appendChild(text);
+            });
+            
+            // Зависимости между компонентами
+            const dependencies = [
+                { from: 0, to: 1 },
+                { from: 1, to: 2 },
+                { from: 1, to: 3 }
+            ];
+            
+            dependencies.forEach(dep => {
+                const fromComp = components[dep.from];
+                const toComp = components[dep.to];
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', fromComp.x + 150);
+                line.setAttribute('y1', fromComp.y + 40);
+                line.setAttribute('x2', toComp.x);
+                line.setAttribute('y2', toComp.y + 40);
+                line.setAttribute('stroke', 'black');
+                line.setAttribute('stroke-dasharray', '5,5');
+                componentCanvas.appendChild(line);
+                
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                arrow.setAttribute('points', `${toComp.x},${toComp.y + 40} ${toComp.x-10},${toComp.y + 35} ${toComp.x-10},${toComp.y + 45}`);
+                arrow.setAttribute('fill', 'black');
+                componentCanvas.appendChild(arrow);
+            });
+        }
+
+        // Создание диаграммы развёртывания
+        function createDeploymentDiagram() {
+            const deploymentCanvas = document.getElementById('deployment-canvas');
+            updateCanvasSize();
+            
+            const nodes = [
+                { name: 'Сервер\nприложений', x: 200, y: 100, type: 'server' },
+                { name: 'Сервер\nбазы данных', x: 500, y: 100, type: 'database' },
+                { name: 'Клиентское\nустройство', x: 200, y: 300, type: 'client' }
+            ];
+            
+            nodes.forEach(node => {
+                let shape;
+                
+                if (node.type === 'server') {
+                    shape = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    shape.setAttribute('x', node.x);
+                    shape.setAttribute('y', node.y);
+                    shape.setAttribute('width', 120);
+                    shape.setAttribute('height', 80);
+                } else if (node.type === 'database') {
+                    shape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    shape.setAttribute('d', `M ${node.x},${node.y} L ${node.x+120},${node.y} L ${node.x+100},${node.y+80} L ${node.x+20},${node.y+80} Z`);
+                } else {
+                    shape = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    shape.setAttribute('x', node.x);
+                    shape.setAttribute('y', node.y);
+                    shape.setAttribute('width', 120);
+                    shape.setAttribute('height', 80);
+                    shape.setAttribute('rx', '10');
+                }
+                
+                shape.setAttribute('fill', 'white');
+                shape.setAttribute('stroke', 'black');
+                deploymentCanvas.appendChild(shape);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', node.x + 60);
+                text.setAttribute('y', node.y + 40);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.innerHTML = node.name.replace('\n', '&#10;');
+                deploymentCanvas.appendChild(text);
+            });
+            
+            // Связи между узлами
+            const connections = [
+                { from: 2, to: 0, label: 'HTTP/API' },
+                { from: 0, to: 1, label: 'JDBC' }
+            ];
+            
+            connections.forEach(conn => {
+                const fromNode = nodes[conn.from];
+                const toNode = nodes[conn.to];
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', fromNode.x + 60);
+                line.setAttribute('y1', fromNode.y + (fromNode.type === 'client' ? 0 : 80));
+                line.setAttribute('x2', toNode.x + 60);
+                line.setAttribute('y2', toNode.y + (toNode.type === 'client' ? 80 : 0));
+                line.setAttribute('stroke', 'black');
+                deploymentCanvas.appendChild(line);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', (fromNode.x + toNode.x + 120) / 2);
+                text.setAttribute('y', (fromNode.y + toNode.y + 80) / 2);
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = conn.label;
+                deploymentCanvas.appendChild(text);
+            });
+        }
+
+        // Инициализация приложения
+        window.addEventListener('load', initCanvas);
+        window.addEventListener('resize', updateCanvasSize);
+    </script>
+</body>
+</html>
