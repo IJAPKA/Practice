@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Диаграммы активности и состояний</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true});</script>
+<style>
+body{font-family:Inter,system-ui,Arial;margin:20px;background:#0f172a;color:#e6eef8}
+.container{max-width:1100px;margin:0 auto}
+h1{font-size:20px;margin:12px 0}
+.card{background:#071029;padding:18px;border-radius:12px;margin:16px 0;box-shadow:0 6px 18px rgba(2,6,23,.6)}
+.small{font-size:13px;color:#9fb0d7;margin-top:8px}
+.note{background:#072032;padding:10px;border-radius:8px;margin-top:10px;color:#bcd2f0}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Диаграммы активности и состояний (все задачи)</h1>
+<div class="card">
+<h2>1. ImplementSolution — Диаграмма активности</h2>
+<div class="mermaid">
+flowchart LR
+  Start((Start)) --> Comm["Communication: Analyst ↔ Customer"]
+  Comm --> SoW[[SoW: Statement of Work]]
+  subgraph Parallel1
+    direction LR
+    Modeling["Modeling"]
+    Comm -->|can run in parallel| Modeling
+  end
+  SoW --> Repo["Save model to Project Repository"]
+  Repo --> Dev["Development"]
+  Repo --> Test["Testing"]
+  Dev --> Product["Product (build)"]
+  Product --> Test
+  Test -->|OK| Prepare["Preparation for Deployment (by Implementer)"]
+  Test -->|Errors| Dev
+  Prepare --> Deploy["Deployment (Implementer)"]
+  Deploy --> Report[[Report]]
+  Prepare -->|must be complete before| Deploy
+  %% порядок выполнения помечен цифрами
+  Start -->|1| Comm
+  Comm -->|2| SoW
+  SoW -->|3| Modeling
+  Modeling -->|4| Repo
+  Repo -->|5a| Dev
+  Repo -->|5b| Test
+  Dev -->|6| Product
+  Product -->|7| Test
+  Test -->|8| Prepare
+  Prepare -->|9| Deploy
+  Deploy -->|10| Report
+
+</div>
+<div class="note">Пояснения: Активность выполняется минимум один раз (старт → Report). Возможный тупик: бесконечный цикл между Testing и Development при постоянных ошибках. Устранение: добавить условие макс. итераций, таймаут на ручное вмешательство, автоматическое создание задачи на исправление и уведомление, rollback.</div>
+</div>
+<div class="card">
+<h2>1.б) State Diagram — внедрение и подготовка</h2>
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> Communication
+  Communication --> Modeling
+  Communication --> Modeling: parallel
+  Modeling --> Repository
+  Repository --> Development
+  Repository --> Testing
+  Development --> Product
+  Product --> Testing
+  Testing --> Prepare: if tests OK
+  Testing --> Development: if defects
+  Prepare --> Deployment
+  Deployment --> Report
+  Report --> [*]
+
+</div>
+</div>
+<div class="card">
+<h2>2. Взаимодействие клиента и кассира — Диаграмма активности</h2>
+<div class="mermaid">
+flowchart TD
+  Start2((Start)) --> AddressCashier["AddressCashier: Customer → Clerk"]
+  AddressCashier --> Greet["GreetCustomer"]
+  Greet --> AskDocs["AskDocuments"]
+  AskDocs --> ReceiveDocs["Customer: gives Receipt + Passport"]
+  ReceiveDocs --> CheckPassport["CheckPassport (Clerk)"]
+  CheckPassport --> IdentityObj[[Identity]]
+  ReceiveDocs --> VerifyReceipt["Check Receipt"]
+  VerifyReceipt --> GiveMoney["GiveMoney (one Note at a time)"]
+  GiveMoney --> NoteObj[[Note]]
+  NoteObj --> Thank["ThankCustomer"]
+  Thank --> ReceiveMoney["ReceiveMoney (client counts as arrives)"]
+  ReceiveMoney --> Farewell["Farewell"]
+  Farewell --> End2((End))
+
+  classDef objs fill:#042438,stroke:#315b78,color:#bfe8ff
+  class IdentityObj,NoteObj objs
+</div>
+<div class="note">Изменения: выдача банкнот по одной; клиент пересчитывает по мере получения.</div>
+<div class="small">Контрольные метки: при старте создаётся 1 control token, он проходит через все действия и уничтожается в конечном узле. Объектные метки: Receipt (передан) — object token создаётся при передаче и потребляется при проверке; Passport — передаётся и возвращается (object token создаётся и не уничтожается в процессе, только возвращается); Identity — создаётся при CheckPassport и потребляется при GiveMoney; Note — для одной банкноты создаётся 1 object token при GiveMoney и потребляется при ReceiveMoney.</div>
+<div class="small">Итого (при выдаче одной банкноты): control tokens created: 1; destroyed: 1. object tokens created: Note:1, Identity:1; object tokens destroyed/consumed: Receipt:1, Note:1, Identity:1. Passport сохраняется и возвращается.</div>
+<div class="small">Классы: Customer, Clerk, Receipt, Passport, Note, Identity, CashDrawer, Transaction, Account, NotificationService.</div>
+</div>
+<div class="card">
+<h2>3. ATM Session — Диаграмма состояний</h2>
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> CardInserted
+  CardInserted --> EnteringPIN: Insert Card
+  EnteringPIN --> ValidatingPIN: Enter PIN
+  ValidatingPIN --> MainMenu: PIN OK
+  ValidatingPIN --> EnteringPIN: PIN Error
+  MainMenu --> PerformingTransaction: Withdraw
+  MainMenu --> EjectingCard: Cancel
+  PerformingTransaction --> MainMenu: operation complete
+  PerformingTransaction --> EjectingCard: Cancel
+  EjectingCard --> SessionEnded: Card Ejected
+  SessionEnded --> [*]
+</div>
+</div>
+<div class="card">
+<h2>4. Order Processing System — Диаграмма состояний</h2>
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> OrderReceived
+  state OrderReceived {
+    entry / logOrderReceived()
+    exit / saveOrderSnapshot()
+  }
+  OrderReceived --> OrderProcessing: Confirm [paymentInfoValid]
+  OrderReceived --> OrderCancelled: Reject [fraudDetected]
+  OrderProcessing {
+    entry / allocateResources()
+    exit / releaseResources()
+  }
+  OrderProcessing --> PaymentApproved: Confirm [paymentSuccess]
+  OrderProcessing --> OrderCancelled: Cancel
+  PaymentApproved {
+    entry / reserveStock()
+    exit / createShipmentRecord()
+  }
+  PaymentApproved --> OrderShipped: Ship [stockAvailable]
+  OrderShipped {
+    entry / dispatchPackage()
+    exit / updateShipmentStatus()
+  }
+  OrderShipped --> OrderCompleted: Deliver
+  OrderCancelled {
+    entry / notifyCustomerCancellation()
+    exit / refundIfNeeded()
+  }
+  OrderCompleted {
+    entry / finalizeOrder()
+    exit / archiveOrder()
+  }
+  OrderCompleted --> [*]
+  OrderCancelled --> [*]
+</div>
+</div>
+<div class="card">
+<h2>5. Hotel Booking System — Диаграмма состояний</h2>
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> RequestReceived
+  RequestReceived {
+    entry / validateRequest()
+    exit / logRequest()
+  }
+  RequestReceived --> RoomSearching: SearchRooms
+  RoomSearching {
+    entry / displayAvailableRooms()
+    exit / selectRoom()
+  }
+  RoomSearching --> BookingConfirmed: ConfirmBooking
+  RoomSearching --> BookingCancelled: Cancel
+  BookingConfirmed {
+    entry / reserveRoomTemp()
+    exit / saveBookingData()
+  }
+  BookingConfirmed --> PaymentProcessing: MakePayment
+  PaymentProcessing {
+    entry / initiatePayment()
+    exit / recordPaymentResult()
+  }
+  PaymentProcessing --> BookingCompleted: PaymentSuccess [paymentApproved]
+  PaymentProcessing --> BookingCancelled: PaymentSuccess [paymentFailed]
+  BookingCompleted {
+    entry / confirmBooking()
+    exit / sendVoucher()
+  }
+  BookingCancelled {
+    entry / releaseRoom()
+    exit / notifyCustomer()
+  }
+  BookingCompleted --> [*]
+  BookingCancelled --> [*]
+</div>
+<div class="note">Отмена возможна только до начала оплаты: путь RequestReceived/RoomSearching → BookingCancelled. Выбор между успешной и неуспешной оплатой реализован в ветвлении PaymentProcessing.</div>
+</div>
+<div class="card">
+<h2>6. User Registration — Диаграмма активности</h2>
+<div class="mermaid">
+flowchart TD
+  StartReg((Start)) --> OpenPage["OpenRegistrationPage"]
+  OpenPage --> EnterData["EnterUserData"]
+  EnterData --> Validate["ValidateData"]
+  Validate -->|valid| CreateAccount["CreateAccount"]
+  Validate -->|invalid| ShowError["ShowErrorMessage"]
+  ShowError --> Decision["Decision: retry?"]
+  Decision -->|yes| EnterData
+  Decision -->|no| EndReg((End))
+  CreateAccount --> parallel{Parallel}
+  parallel --> CreateRecord["CreateRecord"]
+  parallel --> LogEvent["LogEvent"]
+  CreateRecord --> SendEmail["SendConfirmationEmail"]
+  SendEmail --> ConfirmEmail["ConfirmEmail"]
+  ConfirmEmail --> ActivateAccount["ActivateAccount"]
+  ActivateAccount --> EndReg
+
+</div>
+<div class="note">Есть как минимум один прогон (пользователь должен открыть страницу и попытаться зарегистрироваться). Возможный тупик: бесконечный цикл ввода неверных данных; предотвращение: ограничение числа попыток, captcha, подсказки валидации, блокировка на время.</div>
+</div>
+<div class="card">
+<h2>7. Product Return Process — Диаграмма активности</h2>
+<div class="mermaid">
+flowchart TD
+  StartR((Start)) --> FillForm["FillReturnForm"]
+  FillForm --> Check["CheckReceiptAndCondition"]
+  Check -->|ok| CreateRequest["CreateReturnRequest"]
+  Check -->|no| RejectReturn["RejectReturn"]
+  CreateRequest --> Approve["ApproveReturn (Manager)"]
+  Approve --> ReceiveWarehouse["ReceiveItemToWarehouse"]
+  Approve --> NotifyMgr["NotifyManager"]
+  ReceiveWarehouse --> Refund["RefundPayment (PaymentSystem)"]
+  Refund --> NotifyCustomer["NotifyCustomer"]
+  NotifyCustomer --> EndR((End))
+  RejectReturn --> NotifyCustomerReject["NotifyCustomer (rejection)"]
+  NotifyCustomerReject --> EndR
+  RejectReturn -->|customer retries| FillForm
+
+</div>
+<div class="small">Параллель: приём товара на склад и уведомление менеджера выполняются одновременно после утверждения. Возможен повторный запрос клиента при отклонении. Классы: Customer, ReturnForm, Manager, Warehouse, PaymentSystem, NotificationService, ReturnRequest, Inventory, RefundTransaction.</div>
+</div>
+</div>
+</body>
+</html>
