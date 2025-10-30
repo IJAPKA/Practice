@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UML Диаграммы</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .task-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .task-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border-left: 5px solid #6a11cb;
+        }
+        
+        .task-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .task-card h3 {
+            color: #6a11cb;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .task-card p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        .diagram-container {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            display: none;
+        }
+        
+        .diagram-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .diagram-title {
+            font-size: 1.8rem;
+            color: #6a11cb;
+        }
+        
+        .back-btn {
+            background: #6a11cb;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: #5a0db8;
+        }
+        
+        .canvas-container {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        .diagram-description {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 5px;
+            border-left: 4px solid #6a11cb;
+        }
+        
+        .diagram-description h4 {
+            color: #6a11cb;
+            margin-bottom: 10px;
+        }
+        
+        .active {
+            display: block;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .task-list {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .diagram-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>UML Диаграммы</h1>
+            <p class="subtitle">Диаграммы активности и состояний для различных процессов</p>
+        </header>
+        
+        <div class="task-list" id="taskList">
+            <!-- Задания будут добавлены через JavaScript -->
+        </div>
+        
+        <div class="diagram-container" id="diagramContainer">
+            <div class="diagram-header">
+                <h2 class="diagram-title" id="diagramTitle">Заголовок диаграммы</h2>
+                <button class="back-btn" id="backBtn">Назад к списку</button>
+            </div>
+            <div class="canvas-container">
+                <canvas id="diagramCanvas" width="800" height="600"></canvas>
+            </div>
+            <div class="diagram-description" id="diagramDescription">
+                <h4>Описание диаграммы</h4>
+                <p id="descriptionText">Описание будет здесь</p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Диаграммы UML - Реализация на чистом HTML, CSS и JavaScript</p>
+        </footer>
+    </div>
+
+    <script>
+        // Данные для заданий
+        const tasks = [
+            {
+                id: 1,
+                title: "Процесс реализации автоматизированной системы",
+                type: "activity",
+                description: "Диаграмма активности процесса реализации автоматизированной системы с этапами общения, моделирования, разработки, тестирования и внедрения."
+            },
+            {
+                id: 2,
+                title: "Взаимодействие клиента и кассира",
+                type: "activity",
+                description: "Диаграмма активности процесса взаимодействия клиента и кассира при выполнении банковской операции."
+            },
+            {
+                id: 3,
+                title: "Действия клиента в банкомате",
+                type: "state",
+                description: "Диаграмма состояний процесса использования банкомата клиентом."
+            },
+            {
+                id: 4,
+                title: "Система обработки заказов",
+                type: "state",
+                description: "Диаграмма состояний системы обработки заказов с различными этапами выполнения заказа."
+            },
+            {
+                id: 5,
+                title: "Система бронирования отеля",
+                type: "state",
+                description: "Диаграмма состояний системы бронирования отеля с состояниями запроса, поиска, подтверждения и завершения бронирования."
+            },
+            {
+                id: 6,
+                title: "Процесс регистрации пользователя на веб-сайте",
+                type: "activity",
+                description: "Диаграмма активности процесса регистрации пользователя на веб-сайте с этапами ввода данных, проверки, создания аккаунта и подтверждения."
+            },
+            {
+                id: 7,
+                title: "Обработка возврата товара",
+                type: "activity",
+                description: "Диаграмма активности процесса обработки возврата товара с проверкой условий, утверждением заявки и возвратом средств."
+            },
+            {
+                id: 8,
+                title: "Онлайн-оплата заказа",
+                type: "state",
+                description: "Диаграмма состояний процесса онлайн-оплаты заказа с состояниями инициализации, проверки, авторизации и завершения платежа."
+            },
+            {
+                id: 9,
+                title: "Обслуживание заявки в технической поддержке",
+                type: "activity",
+                description: "Диаграмма активности процесса обслуживания заявки в технической поддержке с этапами создания, назначения, анализа и решения проблемы."
+            },
+            {
+                id: 10,
+                title: "Процесс доставки посылки",
+                type: "activity",
+                description: "Диаграмма активности процесса доставки посылки с этапами обработки заказа, упаковки, доставки и подтверждения получения."
+            },
+            {
+                id: 11,
+                title: "Процесс оформления кредита",
+                type: "activity",
+                description: "Диаграмма активности процесса оформления кредита с проверкой данных клиента, кредитной истории и формированием предложения."
+            },
+            {
+                id: 12,
+                title: "Процесс аренды автомобиля",
+                type: "state",
+                description: "Диаграмма состояний процесса аренды автомобиля с состояниями доступности, бронирования, выдачи и возврата автомобиля."
+            },
+            {
+                id: 13,
+                title: "Процесс регистрации студента на курс",
+                type: "activity",
+                description: "Диаграмма активности процесса регистрации студента на курс с проверкой доступности мест и заполнением формы."
+            },
+            {
+                id: 14,
+                title: "Процесс оформления онлайн-заказа",
+                type: "activity",
+                description: "Диаграмма активности процесса оформления онлайн-заказа с выбором товаров, оформлением заказа и оплатой."
+            },
+            {
+                id: 15,
+                title: "Система управления учебным процессом",
+                type: "state",
+                description: "Диаграмма состояний системы управления учебным процессом с состояниями создания, активности, завершения и архивирования курса."
+            },
+            {
+                id: 16,
+                title: "Процесс управления складом",
+                type: "activity",
+                description: "Диаграмма активности процесса управления складом с приемкой товара, проверкой качества, хранением и отгрузкой."
+            },
+            {
+                id: 17,
+                title: "Процесс управления проектом",
+                type: "activity",
+                description: "Диаграмма активности процесса управления проектом с созданием проекта, назначением команды, выполнением задач и завершением."
+            },
+            {
+                id: 18,
+                title: "Электронная медицинская карта пациента",
+                type: "state",
+                description: "Диаграмма состояний электронной медицинской карты пациента с состояниями создания, активности, обновления и архивирования."
+            },
+            {
+                id: 19,
+                title: "Процесс проверки безопасности в аэропорту",
+                type: "activity",
+                description: "Диаграмма активности процесса проверки безопасности в аэропорту с проверкой документов и досмотром пассажиров."
+            }
+        ];
+
+        // Элементы DOM
+        const taskList = document.getElementById('taskList');
+        const diagramContainer = document.getElementById('diagramContainer');
+        const diagramTitle = document.getElementById('diagramTitle');
+        const diagramCanvas = document.getElementById('diagramCanvas');
+        const descriptionText = document.getElementById('descriptionText');
+        const backBtn = document.getElementById('backBtn');
+        const ctx = diagramCanvas.getContext('2d');
+
+        // Создание списка заданий
+        tasks.forEach(task => {
+            const taskCard = document.createElement('div');
+            taskCard.className = 'task-card';
+            taskCard.innerHTML = `
+                <h3>${task.title}</h3>
+                <p>${task.description}</p>
+            `;
+            taskCard.addEventListener('click', () => showDiagram(task));
+            taskList.appendChild(taskCard);
+        });
+
+        // Функция отображения диаграммы
+        function showDiagram(task) {
+            diagramTitle.textContent = task.title;
+            descriptionText.textContent = task.description;
+            
+            // Очистка canvas
+            ctx.clearRect(0, 0, diagramCanvas.width, diagramCanvas.height);
+            
+            // Отрисовка диаграммы в зависимости от типа
+            if (task.type === 'activity') {
+                drawActivityDiagram(task.id);
+            } else {
+                drawStateDiagram(task.id);
+            }
+            
+            // Показать контейнер с диаграммой
+            diagramContainer.classList.add('active');
+            
+            // Прокрутка к диаграмме
+            diagramContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Функция отрисовки диаграммы активности
+        function drawActivityDiagram(taskId) {
+            // Настройки рисования
+            const padding = 50;
+            const nodeWidth = 150;
+            const nodeHeight = 60;
+            const verticalSpacing = 80;
+            const horizontalSpacing = 200;
+            
+            // Определение узлов для каждой диаграммы активности
+            let nodes = [];
+            let edges = [];
+            
+            switch(taskId) {
+                case 1: // Процесс реализации автоматизированной системы
+                    nodes = [
+                        { id: 1, text: "Общение\n(Analyst & Customer)", x: padding + nodeWidth/2, y: padding },
+                        { id: 2, text: "Создание SoW", x: padding + nodeWidth/2, y: padding + verticalSpacing },
+                        { id: 3, text: "Моделирование", x: padding + nodeWidth/2, y: padding + verticalSpacing*2 },
+                        { id: 4, text: "Разработка", x: padding - horizontalSpacing/2, y: padding + verticalSpacing*3 },
+                        { id: 5, text: "Тестирование", x: padding + horizontalSpacing/2, y: padding + verticalSpacing*3 },
+                        { id: 6, text: "Подготовка к внедрению", x: padding + nodeWidth/2, y: padding + verticalSpacing*4 },
+                        { id: 7, text: "Внедрение\n(Implementer)", x: padding + nodeWidth/2, y: padding + verticalSpacing*5 },
+                        { id: 8, text: "Отчет о внедрении", x: padding + nodeWidth/2, y: padding + verticalSpacing*6 }
+                    ];
+                    
+                    edges = [
+                        { from: 1, to: 2 },
+                        { from: 2, to: 3 },
+                        { from: 3, to: 4 },
+                        { from: 3, to: 5 },
+                        { from: 4, to: 5 },
+                        { from: 5, to: 6, condition: "Ошибки найдены", back: true, toNode: 4 },
+                        { from: 5, to: 6, condition: "Ошибок нет" },
+                        { from: 6, to: 7 },
+                        { from: 7, to: 8 }
+                    ];
+                    break;
+                    
+                case 2: // Взаимодействие клиента и кассира
+                    nodes = [
+                        { id: 1, text: "Обращение клиента\n(AddressCashier)", x: padding + nodeWidth/2, y: padding },
+                        { id: 2, text: "Приветствие\n(GreetCustomer)", x: padding + nodeWidth/2, y: padding + verticalSpacing },
+                        { id: 3, text: "Запрос документов\n(AskDocuments)", x: padding + nodeWidth/2, y: padding + verticalSpacing*2 },
+                        { id: 4, text: "Передача квитанции\n(Receipt)", x: padding + nodeWidth/2, y: padding + verticalSpacing*3 },
+                        { id: 5, text: "Проверка паспорта\n(CheckPassport)", x: padding + nodeWidth/2, y: padding + verticalSpacing*4 },
+                        { id: 6, text: "Выдача денег\n(GiveMoney)", x: padding + nodeWidth/2, y: padding + verticalSpacing*5 },
+                        { id: 7, text: "Благодарность\n(ThankCustomer)", x: padding + nodeWidth/2, y: padding + verticalSpacing*6 },
+                        { id: 8, text: "Получение денег\n(ReceiveMoney)", x: padding + nodeWidth/2, y: padding + verticalSpacing*7 },
+                        { id: 9, text: "Пересчет денег", x: padding + nodeWidth/2, y: padding + verticalSpacing*8 },
+                        { id: 10, text: "Прощание\n(Farewell)", x: padding + nodeWidth/2, y: padding + verticalSpacing*9 }
+                    ];
+                    
+                    edges = [
+                        { from: 1, to: 2 },
+                        { from: 2, to: 3 },
+                        { from: 3, to: 4 },
+                        { from: 4, to: 5 },
+                        { from: 5, to: 6 },
+                        { from: 6, to: 7 },
+                        { from: 7, to: 8 },
+                        { from: 8, to: 9 },
+                        { from: 9, to: 10 }
+                    ];
+                    break;
+                    
+                // Добавьте остальные диаграммы активности по аналогии
+                default:
+                    drawDefaultActivityDiagram();
+                    return;
+            }
+            
+            // Отрисовка диаграммы активности
+            drawActivityDiagramNodes(nodes, nodeWidth, nodeHeight);
+            drawActivityDiagramEdges(edges, nodes, nodeWidth, nodeHeight);
+        }
+
+        // Функция отрисовки узлов диаграммы активности
+        function drawActivityDiagramNodes(nodes, nodeWidth, nodeHeight) {
+            ctx.strokeStyle = '#6a11cb';
+            ctx.fillStyle = '#f0f4ff';
+            ctx.lineWidth = 2;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            nodes.forEach(node => {
+                // Рисуем прямоугольник
+                ctx.beginPath();
+                ctx.roundRect(node.x - nodeWidth/2, node.y - nodeHeight/2, nodeWidth, nodeHeight, 10);
+                ctx.fill();
+                ctx.stroke();
+                
+                // Добавляем текст
+                ctx.fillStyle = '#333';
+                const lines = node.text.split('\n');
+                lines.forEach((line, index) => {
+                    ctx.fillText(line, node.x, node.y - (lines.length-1)*8 + index*16);
+                });
+                ctx.fillStyle = '#f0f4ff';
+            });
+        }
+
+        // Функция отрисовки связей диаграммы активности
+        function drawActivityDiagramEdges(edges, nodes, nodeWidth, nodeHeight) {
+            ctx.strokeStyle = '#6a11cb';
+            ctx.fillStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            
+            edges.forEach(edge => {
+                const fromNode = nodes.find(n => n.id === edge.from);
+                const toNode = nodes.find(n => n.id === edge.to);
+                
+                if (!fromNode || !toNode) return;
+                
+                // Начальная точка (низ прямоугольника fromNode)
+                const startX = fromNode.x;
+                const startY = fromNode.y + nodeHeight/2;
+                
+                // Конечная точка (верх прямоугольника toNode)
+                const endX = toNode.x;
+                const endY = toNode.y - nodeHeight/2;
+                
+                // Рисуем стрелку
+                drawArrow(startX, startY, endX, endY);
+                
+                // Добавляем условие, если есть
+                if (edge.condition) {
+                    const midX = (startX + endX) / 2;
+                    const midY = (startY + endY) / 2;
+                    
+                    ctx.fillText(edge.condition, midX, midY - 10);
+                }
+                
+                // Обратная связь (для циклов)
+                if (edge.back && edge.toNode) {
+                    const backToNode = nodes.find(n => n.id === edge.toNode);
+                    if (backToNode) {
+                        const backStartX = toNode.x;
+                        const backStartY = toNode.y + nodeHeight/2;
+                        const backEndX = backToNode.x - nodeWidth/2;
+                        const backEndY = backToNode.y;
+                        
+                        // Рисуем изогнутую стрелку для обратной связи
+                        drawCurvedArrow(backStartX, backStartY, backEndX, backEndY, -50);
+                    }
+                }
+            });
+        }
+
+        // Функция отрисовки диаграммы состояний
+        function drawStateDiagram(taskId) {
+            // Настройки рисования
+            const padding = 50;
+            const nodeWidth = 150;
+            const nodeHeight = 60;
+            const verticalSpacing = 80;
+            const horizontalSpacing = 200;
+            
+            // Определение узлов для каждой диаграммы состояний
+            let nodes = [];
+            let edges = [];
+            
+            switch(taskId) {
+                case 3: // Действия клиента в банкомате
+                    nodes = [
+                        { id: 1, text: "Карта вставлена\n(Card Inserted)", x: padding + nodeWidth/2, y: padding },
+                        { id: 2, text: "Ввод ПИН-кода\n(Entering PIN)", x: padding + nodeWidth/2, y: padding + verticalSpacing },
+                        { id: 3, text: "Проверка ПИН\n(Validating PIN)", x: padding + nodeWidth/2, y: padding + verticalSpacing*2 },
+                        { id: 4, text: "Главное меню\n(Main Menu)", x: padding + nodeWidth/2, y: padding + verticalSpacing*3 },
+                        { id: 5, text: "Выполнение операции\n(Performing Transaction)", x: padding + nodeWidth/2, y: padding + verticalSpacing*4 },
+                        { id: 6, text: "Извлечение карты\n(Ejecting Card)", x: padding + nodeWidth/2, y: padding + verticalSpacing*5 },
+                        { id: 7, text: "Сеанс завершён\n(Session Ended)", x: padding + nodeWidth/2, y: padding + verticalSpacing*6 }
+                    ];
+                    
+                    edges = [
+                        { from: 1, to: 2, event: "Insert Card" },
+                        { from: 2, to: 3, event: "Enter PIN" },
+                        { from: 3, to: 4, event: "PIN OK" },
+                        { from: 3, to: 2, event: "PIN Error" },
+                        { from: 4, to: 5, event: "Withdraw" },
+                        { from: 4, to: 6, event: "Cancel" },
+                        { from: 5, to: 4, event: "Transaction Complete" },
+                        { from: 5, to: 6, event: "Cancel" },
+                        { from: 6, to: 7, event: "Card Ejected" }
+                    ];
+                    break;
+                    
+                case 4: // Система обработки заказов
+                    nodes = [
+                        { id: 1, text: "Заказ получен\n(Order Received)", x: padding + nodeWidth/2, y: padding },
+                        { id: 2, text: "Заказ обрабатывается\n(Order Processing)", x: padding + nodeWidth/2, y: padding + verticalSpacing },
+                        { id: 3, text: "Платёж подтверждён\n(Payment Approved)", x: padding + nodeWidth/2, y: padding + verticalSpacing*2 },
+                        { id: 4, text: "Заказ отправлен\n(Order Shipped)", x: padding + nodeWidth/2, y: padding + verticalSpacing*3 },
+                        { id: 5, text: "Заказ завершён\n(Order Completed)", x: padding + nodeWidth/2, y: padding + verticalSpacing*4 },
+                        { id: 6, text: "Заказ отменён\n(Order Cancelled)", x: padding + horizontalSpacing, y: padding + verticalSpacing*2 }
+                    ];
+                    
+                    edges = [
+                        { from: 1, to: 2, event: "Confirm" },
+                        { from: 2, to: 3, event: "Payment Approved" },
+                        { from: 3, to: 4, event: "Ship" },
+                        { from: 4, to: 5, event: "Deliver" },
+                        { from: 1, to: 6, event: "Reject" },
+                        { from: 2, to: 6, event: "Cancel" },
+                        { from: 3, to: 6, event: "Cancel" }
+                    ];
+                    break;
+                    
+                // Добавьте остальные диаграммы состояний по аналогии
+                default:
+                    drawDefaultStateDiagram();
+                    return;
+            }
+            
+            // Отрисовка диаграммы состояний
+            drawStateDiagramNodes(nodes, nodeWidth, nodeHeight);
+            drawStateDiagramEdges(edges, nodes, nodeWidth, nodeHeight);
+        }
+
+        // Функция отрисовки узлов диаграммы состояний
+        function drawStateDiagramNodes(nodes, nodeWidth, nodeHeight) {
+            ctx.strokeStyle = '#2575fc';
+            ctx.fillStyle = '#e6f0ff';
+            ctx.lineWidth = 2;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            nodes.forEach(node => {
+                // Рисуем прямоугольник со скругленными углами
+                ctx.beginPath();
+                ctx.roundRect(node.x - nodeWidth/2, node.y - nodeHeight/2, nodeWidth, nodeHeight, 15);
+                ctx.fill();
+                ctx.stroke();
+                
+                // Добавляем текст
+                ctx.fillStyle = '#333';
+                const lines = node.text.split('\n');
+                lines.forEach((line, index) => {
+                    ctx.fillText(line, node.x, node.y - (lines.length-1)*8 + index*16);
+                });
+                ctx.fillStyle = '#e6f0ff';
+            });
+        }
+
+        // Функция отрисовки связей диаграммы состояний
+        function drawStateDiagramEdges(edges, nodes, nodeWidth, nodeHeight) {
+            ctx.strokeStyle = '#2575fc';
+            ctx.fillStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            
+            edges.forEach(edge => {
+                const fromNode = nodes.find(n => n.id === edge.from);
+                const toNode = nodes.find(n => n.id === edge.to);
+                
+                if (!fromNode || !toNode) return;
+                
+                // Начальная и конечная точки
+                const startX = fromNode.x;
+                const startY = fromNode.y + nodeHeight/2;
+                const endX = toNode.x;
+                const endY = toNode.y - nodeHeight/2;
+                
+                // Рисуем стрелку
+                drawArrow(startX, startY, endX, endY);
+                
+                // Добавляем событие, если есть
+                if (edge.event) {
+                    const midX = (startX + endX) / 2;
+                    const midY = (startY + endY) / 2;
+                    
+                    ctx.fillText(edge.event, midX, midY - 10);
+                }
+            });
+        }
+
+        // Функция отрисовки стрелки
+        function drawArrow(fromX, fromY, toX, toY) {
+            const headlen = 10; // длина стрелки
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const angle = Math.atan2(dy, dx);
+            
+            // Рисуем линию
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            
+            // Рисуем стрелку
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI/6), toY - headlen * Math.sin(angle - Math.PI/6));
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI/6), toY - headlen * Math.sin(angle + Math.PI/6));
+            ctx.stroke();
+        }
+
+        // Функция отрисовки изогнутой стрелки
+        function drawCurvedArrow(fromX, fromY, toX, toY, curvature) {
+            const cp1x = fromX;
+            const cp1y = fromY + curvature;
+            const cp2x = toX;
+            const cp2y = toY - curvature;
+            
+            // Рисуем кривую Безье
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, toX, toY);
+            ctx.stroke();
+            
+            // Рисуем стрелку в конце
+            const endAngle = Math.atan2(toY - cp2y, toX - cp2x);
+            const headlen = 10;
+            
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(endAngle - Math.PI/6), toY - headlen * Math.sin(endAngle - Math.PI/6));
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(endAngle + Math.PI/6), toY - headlen * Math.sin(endAngle + Math.PI/6));
+            ctx.stroke();
+        }
+
+        // Функция отрисовки стандартной диаграммы активности
+        function drawDefaultActivityDiagram() {
+            const padding = 50;
+            const nodeWidth = 150;
+            const nodeHeight = 60;
+            const verticalSpacing = 80;
+            
+            const nodes = [
+                { id: 1, text: "Начало процесса", x: padding + nodeWidth/2, y: padding },
+                { id: 2, text: "Действие 1", x: padding + nodeWidth/2, y: padding + verticalSpacing },
+                { id: 3, text: "Действие 2", x: padding + nodeWidth/2, y: padding + verticalSpacing*2 },
+                { id: 4, text: "Проверка условия", x: padding + nodeWidth/2, y: padding + verticalSpacing*3 },
+                { id: 5, text: "Действие 3", x: padding - horizontalSpacing/2, y: padding + verticalSpacing*4 },
+                { id: 6, text: "Действие 4", x: padding + horizontalSpacing/2, y: padding + verticalSpacing*4 },
+                { id: 7, text: "Конец процесса", x: padding + nodeWidth/2, y: padding + verticalSpacing*5 }
+            ];
+            
+            const edges = [
+                { from: 1, to: 2 },
+                { from: 2, to: 3 },
+                { from: 3, to: 4 },
+                { from: 4, to: 5, condition: "Условие 1" },
+                { from: 4, to: 6, condition: "Условие 2" },
+                { from: 5, to: 7 },
+                { from: 6, to: 7 }
+            ];
+            
+            drawActivityDiagramNodes(nodes, nodeWidth, nodeHeight);
+            drawActivityDiagramEdges(edges, nodes, nodeWidth, nodeHeight);
+        }
+
+        // Функция отрисовки стандартной диаграммы состояний
+        function drawDefaultStateDiagram() {
+            const padding = 50;
+            const nodeWidth = 150;
+            const nodeHeight = 60;
+            const verticalSpacing = 80;
+            
+            const nodes = [
+                { id: 1, text: "Начальное состояние", x: padding + nodeWidth/2, y: padding },
+                { id: 2, text: "Состояние 1", x: padding + nodeWidth/2, y: padding + verticalSpacing },
+                { id: 3, text: "Состояние 2", x: padding + nodeWidth/2, y: padding + verticalSpacing*2 },
+                { id: 4, text: "Конечное состояние", x: padding + nodeWidth/2, y: padding + verticalSpacing*3 }
+            ];
+            
+            const edges = [
+                { from: 1, to: 2, event: "Событие 1" },
+                { from: 2, to: 3, event: "Событие 2" },
+                { from: 3, to: 4, event: "Событие 3" },
+                { from: 2, to: 1, event: "Возврат" }
+            ];
+            
+            drawStateDiagramNodes(nodes, nodeWidth, nodeHeight);
+            drawStateDiagramEdges(edges, nodes, nodeWidth, nodeHeight);
+        }
+
+        // Добавляем поддержку roundRect для старых браузеров
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                if (width < 2 * radius) radius = width / 2;
+                if (height < 2 * radius) radius = height / 2;
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.arcTo(x + width, y, x + width, y + height, radius);
+                this.arcTo(x + width, y + height, x, y + height, radius);
+                this.arcTo(x, y + height, x, y, radius);
+                this.arcTo(x, y, x + width, y, radius);
+                this.closePath();
+                return this;
+            };
+        }
+
+        // Обработчик кнопки "Назад"
+        backBtn.addEventListener('click', () => {
+            diagramContainer.classList.remove('active');
+            taskList.scrollIntoView({ behavior: 'smooth' });
+        });
+    </script>
+</body>
+</html>
