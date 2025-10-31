@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UML Диаграммы для различных систем</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background-color: var(--light-color);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            flex-grow: 1;
+            min-width: 120px;
+        }
+        
+        .tab:hover {
+            background-color: #d5dbdb;
+        }
+        
+        .tab.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .diagram-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 500px;
+            position: relative;
+            overflow: auto;
+        }
+        
+        .diagram-content {
+            display: none;
+        }
+        
+        .diagram-content.active {
+            display: block;
+        }
+        
+        .diagram-title {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-color);
+        }
+        
+        .activity-node {
+            fill: var(--secondary-color);
+            stroke: var(--dark-color);
+            stroke-width: 2;
+            rx: 5;
+            ry: 5;
+        }
+        
+        .activity-text {
+            fill: white;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        
+        .state-node {
+            fill: var(--light-color);
+            stroke: var(--dark-color);
+            stroke-width: 2;
+            rx: 10;
+            ry: 10;
+        }
+        
+        .state-text {
+            fill: var(--dark-color);
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        
+        .transition {
+            fill: none;
+            stroke: var(--dark-color);
+            stroke-width: 2;
+            marker-end: url(#arrowhead);
+        }
+        
+        .transition-text {
+            fill: var(--dark-color);
+            font-size: 12px;
+            text-anchor: middle;
+        }
+        
+        .decision-node {
+            fill: var(--warning-color);
+            stroke: var(--dark-color);
+            stroke-width: 2;
+        }
+        
+        .fork-join {
+            fill: var(--dark-color);
+            stroke: var(--dark-color);
+            stroke-width: 2;
+        }
+        
+        .sequence-actor {
+            fill: var(--light-color);
+            stroke: var(--dark-color);
+            stroke-width: 2;
+        }
+        
+        .sequence-lifeline {
+            fill: none;
+            stroke: var(--dark-color);
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+        }
+        
+        .sequence-activation {
+            fill: var(--secondary-color);
+            stroke: var(--dark-color);
+            stroke-width: 1;
+        }
+        
+        .sequence-message {
+            fill: none;
+            stroke: var(--dark-color);
+            stroke-width: 2;
+            marker-end: url(#arrowhead);
+        }
+        
+        .sequence-text {
+            fill: var(--dark-color);
+            font-size: 12px;
+            text-anchor: middle;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--light-color);
+            border-radius: 5px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 30px;
+            color: var(--dark-color);
+            border-top: 1px solid var(--light-color);
+        }
+        
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                min-width: 100%;
+            }
+            
+            .diagram-container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>UML Диаграммы для различных систем</h1>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="nav-tabs">
+            <div class="tab active" data-target="food-order">Онлайн-заказ еды</div>
+            <div class="tab" data-target="hotel-booking">Бронирование отеля</div>
+            <div class="tab" data-target="student-registration">Регистрация студента</div>
+            <div class="tab" data-target="iot-device">Умное устройство</div>
+            <div class="tab" data-target="bank-transaction">Банковский перевод</div>
+            <div class="tab" data-target="delivery-system">Система доставки</div>
+        </div>
+        
+        <div class="diagram-container">
+            <!-- Диаграмма для онлайн-заказа еды -->
+            <div id="food-order" class="diagram-content active">
+                <h2 class="diagram-title">Диаграмма активности и последовательности для «Онлайн-заказа еды»</h2>
+                <svg width="100%" height="400" viewBox="0 0 800 400">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="var(--dark-color)"/>
+                        </marker>
+                    </defs>
+                    
+                    <!-- Активности -->
+                    <rect x="50" y="50" width="120" height="40" class="activity-node"/>
+                    <text x="110" y="70" class="activity-text">OpenApp</text>
+                    
+                    <rect x="200" y="50" width="120" height="40" class="activity-node"/>
+                    <text x="260" y="70" class="activity-text">SelectRestaurant</text>
+                    
+                    <rect x="350" y="50" width="120" height="40" class="activity-node"/>
+                    <text x="410" y="70" class="activity-text">ViewMenu</text>
+                    
+                    <rect x="500" y="50" width="120" height="40" class="activity-node"/>
+                    <text x="560" y="70" class="activity-text">AddToCart</text>
+                    
+                    <rect x="200" y="120" width="120" height="40" class="activity-node"/>
+                    <text x="260" y="140" class="activity-text">ConfirmOrder</text>
+                    
+                    <!-- Условный узел для оплаты -->
+                    <rect x="350" y="120" width="40" height="40" class="decision-node"/>
+                    <text x="370" y="140" class="activity-text">?</text>
+                    
+                    <rect x="420" y="120" width="120" height="40" class="activity-node"/>
+                    <text x="480" y="140" class="activity-text">SendToKitchen</text>
+                    
+                    <rect x="570" y="120" width="120" height="40" class="activity-node"/>
+                    <text x="630" y="140" class="activity-text">CourierAssigned</text>
+                    
+                    <rect x="420" y="190" width="120" height="40" class="activity-node"/>
+                    <text x="480" y="210" class="activity-text">DeliverOrder</text>
+                    
+                    <rect x="570" y="190" width="120" height="40" class="activity-node"/>
+                    <text x="630" y="210" class="activity-text">ConfirmDelivery</text>
+                    
+                    <!-- Переходы -->
+                    <path d="M170 70 L200 70" class="transition"/>
+                    <path d="M320 70 L350 70" class="transition"/>
+                    <path d="M470 70 L500 70" class="transition"/>
+                    <path d="M620 70 L650 70" class="transition"/>
+                    <path d="M260 90 L260 120" class="transition"/>
+                    <path d="M370 160 L370 190 L420 190" class="transition"/>
+                    <path d="M540 140 L570 140" class="transition"/>
+                    <path d="M690 140 L720 140" class="transition"/>
+                    <path d="M480 160 L480 190" class="transition"/>
+                    <path d="M630 160 L630 190" class="transition"/>
+                    
+                    <!-- Ветвление оплаты -->
+                    <path d="M370 120 L370 250 L200 250 L200 160" class="transition"/>
+                    <text x="280" y="240" class="transition-text">Оплата не прошла</text>
+                    
+                    <!-- Параллельные процессы -->
+                    <rect x="50" y="280" width="120" height="40" class="activity-node"/>
+                    <text x="110" y="300" class="activity-text">Приготовление</text>
+                    
+                    <rect x="200" y="280" width="120" height="40" class="activity-node"/>
+                    <text x="260" y="300" class="activity-text">Отслеживание</text>
+                    
+                    <rect x="50" y="240" width="270" height="10" class="fork-join"/>
+                    <rect x="50" y="330" width="270" height="10" class="fork-join"/>
+                    
+                    <path d="M320 140 L420 140" class="transition"/>
+                    <text x="370" y="135" class="transition-text">Оплата прошла</text>
+                </svg>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--secondary-color);"></div>
+                        <span>Активность</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--warning-color);"></div>
+                        <span>Условный узел</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--dark-color);"></div>
+                        <span>Параллельные процессы</span>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px;">Классы:</h3>
+                <ul>
+                    <li>User</li>
+                    <li>Restaurant</li>
+                    <li>Order</li>
+                    <li>Courier</li>
+                    <li>PaymentSystem</li>
+                </ul>
+            </div>
+            
+            <!-- Диаграмма для бронирования отеля -->
+            <div id="hotel-booking" class="diagram-content">
+                <h2 class="diagram-title">Диаграмма состояний для «Системы бронирования отеля»</h2>
+                <svg width="100%" height="500" viewBox="0 0 800 500">
+                    <defs>
+                        <marker id="arrowhead-state" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="var(--dark-color)"/>
+                        </marker>
+                    </defs>
+                    
+                    <!-- Состояния -->
+                    <rect x="50" y="50" width="120" height="60" class="state-node"/>
+                    <text x="110" y="80" class="state-text">Created</text>
+                    <text x="110" y="95" class="state-text" font-size="10">entry/sendConfirmationEmail()</text>
+                    
+                    <rect x="220" y="50" width="120" height="60" class="state-node"/>
+                    <text x="280" y="80" class="state-text">Confirmed</text>
+                    
+                    <rect x="390" y="50" width="120" height="60" class="state-node"/>
+                    <text x="450" y="80" class="state-text">Paid</text>
+                    
+                    <rect x="560" y="50" width="120" height="60" class="state-node"/>
+                    <text x="620" y="80" class="state-text">Active</text>
+                    
+                    <rect x="220" y="150" width="120" height="60" class="state-node"/>
+                    <text x="280" y="180" class="state-text">Cancelled</text>
+                    
+                    <rect x="560" y="150" width="120" height="60" class="state-node"/>
+                    <text x="620" y="180" class="state-text">Completed</text>
+                    
+                    <!-- Переходы -->
+                    <path d="M110 110 L110 150 L170 150 L220 150" class="transition"/>
+                    <text x="165" y="130" class="transition-text">ConfirmBooking</text>
+                    
+                    <path d="M280 110 L280 150 L340 150 L390 150" class="transition"/>
+                    <text x="335" y="130" class="transition-text">MakePayment</text>
+                    
+                    <path d="M450 110 L450 150 L510 150 L560 150" class="transition"/>
+                    <text x="505" y="130" class="transition-text">CheckIn</text>
+                    
+                    <path d="M620 110 L620 150" class="transition"/>
+                    <text x="620" y="130" class="transition-text">CheckOut</text>
+                    
+                    <!-- Отмена -->
+                    <path d="M170 80 L170 180 L220 180" class="transition"/>
+                    <text x="170" y="160" class="transition-text">CancelBooking</text>
+                    
+                    <path d="M340 80 L340 180 L390 180" class="transition"/>
+                    <text x="340" y="160" class="transition-text">CancelBooking</text>
+                    
+                    <!-- Ветвление при неудачной оплате -->
+                    <path d="M450 80 L450 40 L220 40 L220 50" class="transition"/>
+                    <text x="335" y="30" class="transition-text">Оплата не выполнена</text>
+                    
+                    <!-- Цикл -->
+                    <path d="M620 180 L620 220 L50 220 L50 110" class="transition"/>
+                    <text x="335" y="210" class="transition-text">Новая бронь</text>
+                </svg>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--light-color);"></div>
+                        <span>Состояние</span>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 20px;">Классы:</h3>
+                <ul>
+                    <li>Customer</li>
+                    <li>Receptionist</li>
+                    <li>Booking</li>
+                    <li>PaymentSystem</li>
+                    <li>Room</li>
+                </ul>
+            </div>
+            
+            <!-- Остальные диаграммы будут аналогично структурированы -->
+            <div id="student-registration" class="diagram-content">
+                <h2 class="diagram-title">Диаграмма активности для «Регистрации студента в университете»</h2>
+                <p>Диаграмма будет отображена здесь...</p>
+            </div>
+            
+            <div id="iot-device" class="diagram-content">
+                <h2 class="diagram-title">Диаграмма состояний для «Умного устройства»</h2>
+                <p>Диаграмма будет отображена здесь...</p>
+            </div>
+            
+            <div id="bank-transaction" class="diagram-content">
+                <h2 class="diagram-title">Диаграмма активности для «Банковской системы переводов»</h2>
+                <p>Диаграмма будет отображена здесь...</p>
+            </div>
+            
+            <div id="delivery-system" class="diagram-content">
+                <h2 class="diagram-title">Комплексная система доставки товаров</h2>
+                <p>Диаграммы будут отображены здесь...</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>UML Диаграммы для различных систем | Создано с использованием HTML, CSS и JavaScript</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.diagram-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    
+                    // Убираем активный класс со всех вкладок и контента
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    
+                    // Добавляем активный класс текущей вкладке и целевому контенту
+                    this.classList.add('active');
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
