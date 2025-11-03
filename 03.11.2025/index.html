@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UML Диаграммы - Интерактивная система</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            border-bottom: 5px solid #fdbb2d;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .diagram-btn {
+            padding: 12px 20px;
+            background: linear-gradient(to bottom, #4a6491, #2c3e50);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .diagram-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(to bottom, #5a74a1, #3c4e70);
+        }
+
+        .diagram-btn.active {
+            background: linear-gradient(to bottom, #fdbb2d, #f57c00);
+            color: #2c3e50;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .diagram-container {
+            flex: 3;
+            padding: 25px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .diagram {
+            width: 100%;
+            height: 500px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .diagram-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .description {
+            flex: 1;
+            padding: 25px;
+            background-color: #f9f9f9;
+            border-left: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        .description h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #fdbb2d;
+        }
+
+        .description p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .description ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .description li {
+            margin-bottom: 8px;
+        }
+
+        .code-block {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #2c3e50;
+            color: white;
+            border-top: 5px solid #fdbb2d;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .description {
+                border-left: none;
+                border-top: 1px solid #ddd;
+            }
+            
+            .diagram {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>UML Диаграммы</h1>
+            <p class="subtitle">Интерактивная система визуализации UML-диаграмм</p>
+        </header>
+        
+        <div class="controls">
+            <button class="diagram-btn active" data-diagram="state">Диаграмма состояний</button>
+            <button class="diagram-btn" data-diagram="activity">Диаграмма активности</button>
+            <button class="diagram-btn" data-diagram="sequence">Диаграмма последовательности</button>
+            <button class="diagram-btn" data-diagram="usecase">Диаграмма вариантов использования</button>
+            <button class="diagram-btn" data-diagram="component">Диаграмма компонентов</button>
+            <button class="diagram-btn" data-diagram="deployment">Диаграмма развертывания</button>
+        </div>
+        
+        <div class="content">
+            <div class="diagram-container">
+                <h2 class="diagram-title">Диаграмма состояний - Система бронирования авиабилетов</h2>
+                <div class="diagram" id="diagram">
+                    <!-- Диаграмма будет отрисована здесь -->
+                </div>
+            </div>
+            
+            <div class="description">
+                <h2>Описание диаграммы</h2>
+                <p>Эта диаграмма состояний отображает процесс бронирования авиабилетов от начального состояния до завершения.</p>
+                
+                <h3>Состояния:</h3>
+                <ul>
+                    <li><strong>Idle</strong> - система ожидает действий пользователя</li>
+                    <li><strong>SelectingFlight</strong> - выбор рейса</li>
+                    <li><strong>EnteringPassengerData</strong> - ввод данных пассажира</li>
+                    <li><strong>PaymentPending</strong> - ожидание оплаты</li>
+                    <li><strong>TicketConfirmed</strong> - билет подтверждён</li>
+                    <li><strong>BookingCancelled</strong> - бронирование отменено</li>
+                    <li><strong>Error</strong> - ошибка при бронировании</li>
+                </ul>
+                
+                <h3>События и переходы:</h3>
+                <ul>
+                    <li><strong>SelectFlight()</strong> - переход из Idle в SelectingFlight</li>
+                    <li><strong>EnterData()</strong> - переход из SelectingFlight в EnteringPassengerData</li>
+                    <li><strong>ConfirmPayment()</strong> - переход из EnteringPassengerData в PaymentPending</li>
+                    <li><strong>Cancel()</strong> - отмена бронирования</li>
+                    <li><strong>ErrorDetected()</strong> - переход в состояние Error</li>
+                    <li><strong>Retry()</strong> - возврат из Error в PaymentPending</li>
+                </ul>
+                
+                <h3>Действия:</h3>
+                <ul>
+                    <li><strong>entry: showAvailableFlights()</strong> - при входе в состояние SelectingFlight</li>
+                    <li><strong>exit: saveUserSelection()</strong> - при выходе из состояния SelectingFlight</li>
+                    <li><strong>entry: validatePaymentInfo()</strong> - при входе в состояние PaymentPending</li>
+                </ul>
+                
+                <h3>Условия:</h3>
+                <p>Если <code>paymentError = true</code>, происходит переход в состояние Error.</p>
+                
+                <div class="code-block">
+                    // Пример кода для обработки состояний<br>
+                    if (paymentError) {<br>
+                    &nbsp;&nbsp;currentState = State.ERROR;<br>
+                    &nbsp;&nbsp;showErrorMessage();<br>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>UML Диаграммы &copy; 2023 | Интерактивная система визуализации</p>
+        </footer>
+    </div>
+
+    <script>
+        // Инициализация Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+
+        // Определение диаграмм
+        const diagrams = {
+            state: `stateDiagram-v2
+    [*] --> Idle
+
+    Idle --> SelectingFlight : SelectFlight()
+    SelectingFlight --> EnteringPassengerData : EnterData()
+    EnteringPassengerData --> PaymentPending : ConfirmPayment()
+    PaymentPending --> TicketConfirmed : ConfirmPayment()
+    PaymentPending --> Error : ErrorDetected() [paymentError = true]
+    Error --> PaymentPending : Retry()
+    
+    SelectingFlight --> Idle : Cancel()
+    EnteringPassengerData --> Idle : Cancel()
+    PaymentPending --> BookingCancelled : Cancel()
+    Error --> BookingCancelled : Cancel()
+
+    TicketConfirmed --> [*]
+    BookingCancelled --> [*]
+
+    note right of SelectingFlight
+        entry: showAvailableFlights()
+        exit: saveUserSelection()
+    end note
+
+    note right of PaymentPending
+        entry: validatePaymentInfo()
+    end note`,
+
+            activity: `flowchart TD
+    A[Login] --> B[ViewCourses]
+    B --> C[SelectCourse]
+    
+    subgraph Параллельные действия
+        direction LR
+        D[CheckAvailability]
+        E[ValidateUser]
+    end
+
+    C --> Параллельные действия
+    
+    Параллельные действия --> F{Курс доступен?}
+    F -- Нет --> G[NotifyFull]
+    G --> Z[Конец процесса]
+    
+    F -- Да --> H{Оплата проверена?}
+    H -- Нет --> I[MakePayment]
+    I --> H
+    H -- Да --> J[EnrollCourse]
+    J --> K[SendConfirmation]
+    K --> Z`,
+
+            sequence: `sequenceDiagram
+    participant M as Manager
+    participant S as System
+    participant D as Developer
+
+    M ->> S: createTask()
+    S ->> D: notifyAssignment()
+    D ->> S: submitForReview()
+    
+    alt Задача утверждена
+        M ->> S: approveTask()
+        S ->> D: notifyApproval()
+    else Задача отклонена
+        M ->> S: returnToDeveloper()
+        S ->> D: notifyRejection()
+    end`,
+
+            usecase: `flowchart TD
+    subgraph Online Store
+        A1[RegisterAccount]
+        A2[Login]
+        A3[BrowseProducts]
+        A4[AddToCart]
+        A5[Checkout]
+        A6[PayOrder]
+        A7[TrackOrder]
+        A8[ManageProducts]
+        A9[GenerateReports]
+        A10[SendAlert]
+    end
+
+    subgraph External Systems
+        B1[PaymentSystem]
+        B2[DeliveryService]
+    end
+
+    C[Customer] --> A1
+    C --> A2
+    C --> A3
+    C --> A4
+    C --> A5
+    C --> A7
+    
+    D[Admin] --> A8
+    D --> A9
+    
+    A5 --> A6
+    A7 ..> A10: &lt;&lt;extend&gt;&gt;
+    
+    A6 --> B1
+    A7 --> B2`,
+
+            component: `flowchart TD
+    subgraph Internal Components
+        A[User Interface]
+        B[Booking Service]
+        C[Payment Module]
+        D[Notification Service]
+        E[Database]
+    end
+
+    F[External API<br>Hotel Provider]
+
+    A -- "IBookingManager" --> B
+    B -- "IDataAccess" --> E
+    B -- "IPaymentProcessor" --> C
+    B -- "IHotelProvider" --> F
+    C -- "INotifier" --> D`,
+
+            deployment: `flowchart TD
+    subgraph Client Tier
+        A[Client Device<br/>OS: Windows 11<br/>Browser: Chrome]
+    end
+
+    subgraph Web Tier
+        B[Web Server<br/>OS: Ubuntu 22.04<br/>RAM: 16GB]
+    end
+
+    subgraph Application Tier
+        C[Application Server<br/>OS: Ubuntu 22.04<br/>RAM: 32GB<br/>Storage: 500GB]
+    end
+
+    subgraph Data Tier
+        D[Database Server<br/>OS: RHEL 9<br/>PostgreSQL<br/>RAM: 64GB]
+        E[Cloud Storage<br/>Backup Repository]
+    end
+
+    A <-->|"HTTP/HTTPS"| B
+    B <-->|"REST API"| C
+    C <-->|"JDBC"| D
+    C <-->|"Secure Backup Channel"| E
+    
+    B2[Web Server 2]
+    D2[Database Server 2]
+    
+    B ~~~ B2
+    D ~~~ D2`
+        };
+
+        // Описания для каждой диаграммы
+        const descriptions = {
+            state: {
+                title: "Диаграмма состояний - Система бронирования авиабилетов",
+                content: `<h2>Описание диаграммы</h2>
+                <p>Эта диаграмма состояний отображает процесс бронирования авиабилетов от начального состояния до завершения.</p>
+                
+                <h3>Состояния:</h3>
+                <ul>
+                    <li><strong>Idle</strong> - система ожидает действий пользователя</li>
+                    <li><strong>SelectingFlight</strong> - выбор рейса</li>
+                    <li><strong>EnteringPassengerData</strong> - ввод данных пассажира</li>
+                    <li><strong>PaymentPending</strong> - ожидание оплаты</li>
+                    <li><strong>TicketConfirmed</strong> - билет подтверждён</li>
+                    <li><strong>BookingCancelled</strong> - бронирование отменено</li>
+                    <li><strong>Error</strong> - ошибка при бронировании</li>
+                </ul>
+                
+                <h3>События и переходы:</h3>
+                <ul>
+                    <li><strong>SelectFlight()</strong> - переход из Idle в SelectingFlight</li>
+                    <li><strong>EnterData()</strong> - переход из SelectingFlight в EnteringPassengerData</li>
+                    <li><strong>ConfirmPayment()</strong> - переход из EnteringPassengerData в PaymentPending</li>
+                    <li><strong>Cancel()</strong> - отмена бронирования</li>
+                    <li><strong>ErrorDetected()</strong> - переход в состояние Error</li>
+                    <li><strong>Retry()</strong> - возврат из Error в PaymentPending</li>
+                </ul>
+                
+                <h3>Действия:</h3>
+                <ul>
+                    <li><strong>entry: showAvailableFlights()</strong> - при входе в состояние SelectingFlight</li>
+                    <li><strong>exit: saveUserSelection()</strong> - при выходе из состояния SelectingFlight</li>
+                    <li><strong>entry: validatePaymentInfo()</strong> - при входе в состояние PaymentPending</li>
+                </ul>
+                
+                <h3>Условия:</h3>
+                <p>Если <code>paymentError = true</code>, происходит переход в состояние Error.</p>`
+            },
+            activity: {
+                title: "Диаграмма активности - Процесс онлайн-регистрации на курс",
+                content: `<h2>Описание диаграммы</h2>
+                <p>Эта диаграмма активности показывает процесс регистрации на онлайн-курс, включая параллельные действия и условия.</p>
+                
+                <h3>Основной поток:</h3>
+                <ul>
+                    <li><strong>Login</strong> - пользователь входит в систему</li>
+                    <li><strong>ViewCourses</strong> - просматривает список курсов</li>
+                    <li><strong>SelectCourse</strong> - выбирает курс</li>
+                    <li><strong>CheckAvailability</strong> - проверка доступности места</li>
+                    <li><strong>EnrollCourse</strong> - регистрация на курс</li>
+                    <li><strong>SendConfirmation</strong> - отправка подтверждения</li>
+                </ul>
+                
+                <h3>Параллельные действия:</h3>
+                <ul>
+                    <li><strong>CheckAvailability</strong> - проверка доступности места</li>
+                    <li><strong>ValidateUser</strong> - валидация данных пользователя</li>
+                </ul>
+                
+                <h3>Условия:</h3>
+                <ul>
+                    <li>Если курс переполнен - отправляется уведомление <strong>NotifyFull</strong></li>
+                    <li>Если пользователь не оплатил курс - регистрация приостанавливается до выполнения действия <strong>MakePayment</strong></li>
+                </ul>`
+            },
+            sequence: {
+                title: "Диаграмма последовательности - Система управления проектами",
+                content: `<h2>Описание диаграммы</h2>
+                <p>Эта диаграмма последовательности показывает взаимодействие между участниками в системе управления проектами.</p>
+                
+                <h3>Участники:</h3>
+                <ul>
+                    <li><strong>Manager</strong> - менеджер проекта</li>
+                    <li><strong>System</strong> - система управления проектами</li>
+                    <li><strong>Developer</strong> - разработчик</li>
+                </ul>
+                
+                <h3>Основной поток:</h3>
+                <ul>
+                    <li><strong>createTask()</strong> - менеджер создает задачу</li>
+                    <li><strong>notifyAssignment()</strong> - система уведомляет разработчика о назначении</li>
+                    <li><strong>submitForReview()</strong> - разработчик отправляет задачу на проверку</li>
+                    <li><strong>approveTask()</strong> - менеджер утверждает задачу</li>
+                    <li><strong>notifyApproval()</strong> - система уведомляет разработчика об утверждении</li>
+                </ul>
+                
+                <h3>Альтернативный поток:</h3>
+                <ul>
+                    <li>Если задача отклонена:
+                        <ul>
+                            <li><strong>returnToDeveloper()</strong> - менеджер возвращает задачу разработчику</li>
+                            <li><strong>notifyRejection()</strong> - система уведомляет разработчика об отклонении</li>
+                        </ul>
+                    </li>
+                </ul>`
+            },
+            usecase: {
+                title: "Диаграмма вариантов использования - Онлайн-магазин",
+                content: `<h2>Описание диаграммы</h2>
+                <p>Эта диаграмма вариантов использования показывает функциональность онлайн-магазина и взаимодействие с внешними системами.</p>
+                
+                <h3>Акторы:</h3>
+                <ul>
+                    <li><strong>Customer</strong> - покупатель</li>
+                    <li><strong>Admin</strong> - администратор</li>
+                    <li><strong>PaymentSystem</strong> - платёжная система</li>
+                    <li><strong>DeliveryService</strong> - служба доставки</li>
+                </ul>
+                
+                <h3>Основные прецеденты:</h3>
+                <ul>
+                    <li><strong>RegisterAccount</strong> - регистрация пользователя</li>
+                    <li><strong>Login</strong> - вход в систему</li>
+                    <li><strong>BrowseProducts</strong> - просмотр каталога</li>
+                    <li><strong>AddToCart</strong> - добавить в корзину</li>
+                    <li><strong>Checkout</strong> - оформить заказ</li>
+                    <li><strong>PayOrder</strong> - оплатить заказ</li>
+                    <li><strong>TrackOrder</strong> - отслеживать доставку</li>
+                    <li><strong>ManageProducts</strong> - управление товарами (для администратора)</li>
+                    <li><strong>GenerateReports</strong> - формирование отчётов</li>
+                </ul>
+                
+                <h3>Связи:</h3>
+                <ul>
+                    <li><strong>Checkout include → PayOrder</strong> - оплата является частью процесса оформления заказа</li>
+                    <li><strong>TrackOrder extend → NotifyDeliveryStatus</strong> - уведомление о статусе доставки расширяет отслеживание заказа</li>
+                </ul>`
+            },
+            component: {
+                title: "Диаграмма компонентов - Система бронирования отелей",
+                content: `<h2>Описание диаграммы</h2>
+                <p>Эта диаграмма компонентов показывает архитектуру системы бронирования отелей и взаимодействие между компонентами.</p>
+                
+                <h3>Компоненты:</h3>
+                <ul>
+                    <li><strong>User Interface</strong> - пользовательский интерфейс</li>
+                    <li><strong>Booking Service</strong> - сервис бронирования</li>
+                    <li><strong>Payment Module</strong> - модуль оплаты</li>
+                    <li><strong>Notification Service</strong> - сервис уведомлений</li>
+                    <li><strong>Database</strong> - база данных</li>
+                    <li><strong>External API (Hotel Provider)</strong> - внешний API поставщика отелей</li>
+                </ul>
+                
+                <h3>Интерфейсы:</h3>
+                <ul>
+                    <li><strong>IBookingManager</strong> - между UI и Booking Service</li>
+                    <li><strong>IPaymentProcessor</strong> - между Booking Service и Payment Module</li>
+                    <li><strong>INotifier</strong> - между Payment Module и Notification Service</li>
+                    <li><strong>IDataAccess</strong> - между Booking Service и Database</li>
+                </ul>
+                
+                <h3>Особенности архитектуры:</h3>
+                <ul>
+                    <li>External API возвращает данные о доступных номерах в формате JSON</li>
+                    <li>Notification Service может быть развернут как микросервис</li>
+                    <li>Payment Module зависит от Booking Service и Database</li>
+                </ul>`
+            },
+            deployment: {
+                title: "Диаграмма развертывания - Корпоративная система управления",
+                content: `<h2>Описание диаграммы</h2>
+                <p>Эта диаграмма развертывания показывает инфраструктуру корпоративной системы управления.</p>
+                
+                <h3>Узлы (Nodes):</h3>
+                <ul>
+                    <li><strong>Client Device</strong> - рабочее место сотрудника</li>
+                    <li><strong>Web Server</strong> - веб-сервер</li>
+                    <li><strong>Application Server</strong> - сервер приложений</li>
+                    <li><strong>Database Server</strong> - сервер базы данных</li>
+                    <li><strong>Cloud Storage</strong> - облачное хранилище</li>
+                </ul>
+                
+                <h3>Компоненты на узлах:</h3>
+                <ul>
+                    <li>На <strong>Client Device</strong>: Web Browser</li>
+                    <li>На <strong>Web Server</strong>: Frontend Application</li>
+                    <li>На <strong>Application Server</strong>: Business Logic, API Service</li>
+                    <li>На <strong>Database Server</strong>: PostgreSQL Database</li>
+                    <li>На <strong>Cloud Storage</strong>: Backup Repository</li>
+                </ul>
+                
+                <h3>Соединения:</h3>
+                <ul>
+                    <li><strong>Client Device ↔ Web Server</strong> - HTTP/HTTPS</li>
+                    <li><strong>Web Server ↔ Application Server</strong> - REST API</li>
+                    <li><strong>Application Server ↔ Database Server</strong> - JDBC</li>
+                    <li><strong>Application Server ↔ Cloud Storage</strong> - Secure Backup Channel</li>
+                </ul>
+                
+                <h3>Отказоустойчивость:</h3>
+                <p>Система поддерживает горизонтальное масштабирование и дублирование ключевых компонентов (Web Server и Database Server) для обеспечения высокой доступности.</p>`
+            }
+        };
+
+        // Обработчики событий для кнопок
+        document.querySelectorAll('.diagram-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                // Удаляем активный класс у всех кнопок
+                document.querySelectorAll('.diagram-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Добавляем активный класс к текущей кнопке
+                this.classList.add('active');
+                
+                // Получаем тип диаграммы
+                const diagramType = this.getAttribute('data-diagram');
+                
+                // Обновляем диаграмму
+                updateDiagram(diagramType);
+            });
+        });
+
+        // Функция обновления диаграммы
+        function updateDiagram(type) {
+            const diagramElement = document.getElementById('diagram');
+            const titleElement = document.querySelector('.diagram-title');
+            const descriptionElement = document.querySelector('.description');
+            
+            // Обновляем заголовок
+            titleElement.textContent = descriptions[type].title;
+            
+            // Обновляем описание
+            descriptionElement.innerHTML = descriptions[type].content;
+            
+            // Очищаем контейнер диаграммы
+            diagramElement.innerHTML = '';
+            
+            // Создаем элемент для диаграммы
+            const diagramDiv = document.createElement('div');
+            diagramDiv.className = 'mermaid';
+            diagramDiv.textContent = diagrams[type];
+            
+            // Добавляем диаграмму в контейнер
+            diagramElement.appendChild(diagramDiv);
+            
+            // Перерисовываем диаграмму
+            mermaid.init(undefined, diagramElement.querySelectorAll('.mermaid'));
+        }
+
+        // Инициализация первой диаграммы
+        updateDiagram('state');
+    </script>
+</body>
+</html>
