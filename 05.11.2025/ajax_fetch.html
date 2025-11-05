@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Menu via API</title>
+<link rel="stylesheet" href="menu_style.css">
+</head>
+<body>
+<select id="roleSelect">
+  <option value="admin">Admin</option>
+  <option value="student" selected>Student</option>
+  <option value="guest">Guest</option>
+</select>
+
+<nav id="menuContainer"></nav>
+
+<script>
+async function loadMenu(role){
+  const res = await fetch('/api/menu?role=' + encodeURIComponent(role));
+  const data = await res.json();
+  const container = document.getElementById('menuContainer');
+  container.innerHTML = buildMenuHtml(data.menu);
+  attachLogHandlers();
+}
+
+function buildMenuHtml(nodes){
+  let html = '<ul class="nav">';
+  nodes.forEach(n => {
+    html += '<li class="nav-item">';
+    html += `<a href="${n.url}" data-item-id="${n.id}">${n.title}</a>`;
+    if (n.children && n.children.length){
+      html += '<div class="dropdown"><ul>';
+      n.children.forEach(c => {
+        html += `<li><a href="${c.url}" data-item-id="${c.id}">${c.title}</a></li>`;
+      });
+      html += '</ul></div>';
+    }
+    html += '</li>';
+  });
+  html += '</ul>';
+  return html;
+}
+
+function attachLogHandlers(){
+  document.querySelectorAll('a[data-item-id]').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      const payload = {
+        username: document.getElementById('roleSelect').value,
+        item_id: a.getAttribute('data-item-id'),
+        item_title: a.textContent,
+        url: a.getAttribute('href')
+      };
+      // non-blocking
+      fetch('/api/log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    });
+  });
+}
+
+document.getElementById('roleSelect').addEventListener('change', function(){
+  loadMenu(this.value);
+});
+
+// initial
+loadMenu(document.getElementById('roleSelect').value);
+</script>
+</body>
+</html>
